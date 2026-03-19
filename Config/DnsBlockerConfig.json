@@ -1,0 +1,23 @@
+{
+  "Data": {
+    "ich": {
+      "Block": true,
+      "IPAddresses": [
+        "192.168.178.130"
+      ],
+      "DomainsToBlock": [
+        "netflix.com"
+      ]
+    },
+    "nathan": {
+      "Block": true,
+      "IPAddresses": [
+        "192.168.178.140"
+      ],
+      "DomainsToBlock": [
+        "jamf.com",
+        "amazon"
+      ]
+    }
+  }
+}

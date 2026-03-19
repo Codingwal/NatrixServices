@@ -1,26 +1,23 @@
 using System.Net;
 using ARSoft.Tools.Net.Dns;
+using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices;
 
-public class DnsBlocker
+public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> logger) : BackgroundService
 {
-    private readonly DnsServer server;
-    public DnsBlocker()
+    private readonly DnsServer server = new();
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        server = new DnsServer();
+        logger.LogInformation("Starting DNS server");
         server.QueryReceived += OnQueryReceived;
-    }
-
-    public void Start()
-    {
-        Console.WriteLine("Starting DNS server");
         server.Start();
-    }
 
-    public void Stop()
-    {
-        Console.WriteLine("Stopping DNS server");
+        await Task.Delay(Timeout.Infinite, stoppingToken);
+
+        logger.LogInformation("Stopping DNS server");
+        server.QueryReceived -= OnQueryReceived;
         server.Stop();
     }
 
@@ -34,10 +31,15 @@ public class DnsBlocker
 
         IPAddress ipAddr = e.RemoteEndpoint.Address.MapToIPv4();
 
+        // Get the DataContext
+        using IServiceScope scope = serviceProvider.CreateScope();
+        DataContext dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+
         // Check if the ip address is registered in the config of a natrix user
-        if (!GetUserConfig(ipAddr, out DnsBlockerConfig config))
+        DnsBlockerConfig? config = await dataContext.DnsBlockerConfigs.FirstOrDefaultAsync(x => x.IPAddress == ipAddr.ToString());
+        if (config == null)
         {
-            Console.WriteLine($"Ignoring request from {ipAddr} as it is not listed in any users list");
+            logger.LogInformation("Ignoring request from {ipAddr} as it is not listed in any users list", ipAddr);
             return;
         }
 
@@ -49,12 +51,12 @@ public class DnsBlocker
         DnsMessage response = query.CreateResponseInstance();
         if (BlockDomain(domainName, config))
         {
-            Console.WriteLine($"Blocking \"{domainName}\"");
+            logger.LogInformation("Blocking \"{domainName}\"", domainName);
             response.ReturnCode = ReturnCode.NxDomain;
         }
         else
         {
-            Console.WriteLine($"Forwarding \"{domainName}\"");
+            logger.LogInformation("Forwarding \"{domainName}\"", domainName);
             DnsMessage? upstreamResponse = await ForwardQuestion(question);
 
             if (upstreamResponse != null)
@@ -63,29 +65,17 @@ public class DnsBlocker
                 response.ReturnCode = upstreamResponse.ReturnCode;
             }
             else
-                Console.WriteLine("Error: upstreamResponse is null");
+                logger.LogError("Error: upstreamResponse is null");
         }
 
         e.Response = response;
-    }
-
-    private static bool GetUserConfig(IPAddress ipAddr, out DnsBlockerConfig config)
-    {
-        var userConfigs = ConfigHandler.GetAllUserConfigs<DnsBlockerConfig>();
-
-        string ipAddrStr = ipAddr.ToString();
-
-        var (userId, userConfig) = userConfigs.FirstOrDefault(x => x.Value.IPAddresses.Contains(ipAddrStr));
-
-        config = userConfig;
-        return userId != null;
     }
     private static bool BlockDomain(string domainName, DnsBlockerConfig config)
     {
         if (!config.Block)
             return false;
 
-        foreach (string domainToBlock in config.DomainsToBlock)
+        foreach (string domainToBlock in config.DomainsToBlock.Domains)
         {
             if (domainName.Contains(domainToBlock, StringComparison.OrdinalIgnoreCase))
                 return true;

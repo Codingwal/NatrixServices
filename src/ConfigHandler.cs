@@ -2,65 +2,65 @@ using System.Text.Json;
 
 namespace NatrixServices;
 
-public static class ConfigHandler
+public static class DataHandler
 {
     private static JsonSerializerOptions jsonSerializerOptions = new() { WriteIndented = true };
-    public static T LoadUserConfig<T>(NatrixUser user)
+    public static T LoadUserData<T>(NatrixUser user)
     {
-        if (!TryLoadUserConfig(user, out T? userConfig))
-            throw new Exception($"Config of type {typeof(T)} does not exist for user {user.UserId}");
+        if (!TryLoadUserData(user, out T? userData))
+            throw new Exception($"Data of type {typeof(T)} does not exist for user {user.UserId}");
 
-        return userConfig!;
+        return userData!;
     }
-    public static bool TryLoadUserConfig<T>(NatrixUser user, out T? userConfig)
+    public static bool TryLoadUserData<T>(NatrixUser user, out T? userData)
     {
-        UserConfig<T> config = LoadConfig<UserConfig<T>>(GetName<T>());
+        UserData<T> Data = LoadData<UserData<T>>(GetName<T>());
 
-        return config.Data.TryGetValue(user.UserId, out userConfig);
-    }
-
-    public static Dictionary<NatrixUser, T> GetAllUserConfigs<T>()
-    {
-        UserConfig<T> config = LoadConfig<UserConfig<T>>(GetName<T>());
-
-        return config.Data.ToDictionary(x => NatrixUser.GetUser(x.Key), x => x.Value);
+        return Data.Data.TryGetValue(user.UserId, out userData);
     }
 
-    public static void SetUserConfig<T>(NatrixUser user, T userConfig)
+    public static Dictionary<NatrixUser, T> GetAllUserDatas<T>()
     {
-        var config = File.Exists(GetName<T>()) ? LoadConfig<UserConfig<T>>(GetName<T>()) : UserConfig<T>.Default;
+        UserData<T> Data = LoadData<UserData<T>>(GetName<T>());
 
-        config.Data[user.UserId] = userConfig;
-
-        SaveConfig(config, GetName<T>());
+        return Data.Data.ToDictionary(x => UserManager.GetUser(x.Key), x => x.Value);
     }
 
-    // public static void InitConfig<T>()
+    public static void SetUserData<T>(NatrixUser user, T userData)
+    {
+        var Data = File.Exists(GetName<T>()) ? LoadData<UserData<T>>(GetName<T>()) : UserData<T>.Default;
+
+        Data.Data[user.UserId] = userData;
+
+        SaveData(Data, GetName<T>());
+    }
+
+    // public static void InitData<T>()
     // {
-    //     SaveConfig(UserConfig<T>.Default, GetName<T>());
+    //     SaveData(UserData<T>.Default, GetName<T>());
     // }
 
-    private static T? LoadConfig<T>(string configName)
+    private static T? LoadData<T>(string DataName)
     {
-        string str = File.ReadAllText(configName);
+        string str = File.ReadAllText(DataName);
         return JsonSerializer.Deserialize<T>(str);
     }
 
-    private static void SaveConfig<T>(T config, string configName)
+    private static void SaveData<T>(T Data, string DataName)
     {
-        string str = JsonSerializer.Serialize(config, jsonSerializerOptions);
-        File.WriteAllText(configName, str);
+        string str = JsonSerializer.Serialize(Data, jsonSerializerOptions);
+        File.WriteAllText(DataName, str);
     }
 
     private static string GetName<T>()
     {
-        return $"Config/{typeof(T).Name}.json";
+        return $"Data/{typeof(T).Name}.json";
     }
 
-    private struct UserConfig<T>
+    private struct UserData<T>
     {
         public Dictionary<string, T> Data { get; set; }
-        public static UserConfig<T> Default => new() { Data = [] };
+        public static UserData<T> Default => new() { Data = [] };
     }
 }
 

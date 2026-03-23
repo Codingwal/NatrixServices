@@ -1,1 +1,1 @@
-curl -i localhost:5031/api/dnsblocker/data/user1
+curl -i http://dnsblocker.ydns.eu:5000/api/dnsblocker/data/user1

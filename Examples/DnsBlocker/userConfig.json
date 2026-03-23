@@ -1,8 +1,8 @@
 {
-    "userId": "test1",
-    "enableBlocking": false,
+    "userId": "ipad",
+    "enableBlocking": true,
     "ipAddresses": [
-        "10.10.1.1"
+        "192.168.178.140"
     ],
     "domainsToBlock": [
         "apple.com"

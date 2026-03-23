@@ -8,6 +8,8 @@ public static class Program
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
 
+        builder.WebHost.UseUrls("http://0.0.0.0:5000");
+
         builder.Services.AddControllers();
 
         builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));

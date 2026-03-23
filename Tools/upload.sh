@@ -1,0 +1,1 @@
+scp bin/Release/net10.0/linux-x64/publish/NatrixServices opc@natrixServices:~/NatrixServices/NatrixServices

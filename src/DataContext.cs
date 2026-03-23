@@ -70,7 +70,7 @@ public class DataContext<TUser, TGlobal> : DbContext
     }
     public async Task<TGlobal> GetGlobalData()
     {
-        TGlobal? data = await GlobalData.FirstOrDefaultAsync();
+        TGlobal? data = await GlobalData.SingleOrDefaultAsync();
 
         if (data == null)
             throw new($"Global data ({typeof(TGlobal)}) is not initialized");

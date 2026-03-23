@@ -3,54 +3,89 @@ using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices;
 
-public class DataContext : DbContext
+public abstract class UserDataBase
 {
-    public DbSet<UserData> UserDatas => Set<UserData>();
-    public DbSet<DnsBlockerConfig> DnsBlockerConfigs => Set<DnsBlockerConfig>();
+    [Key]
+    [Required]
+    [StringLength(8)]
+    public string UserId { get; set; } = string.Empty;
+}
+
+public class DataContext<TUser, TGlobal> : DbContext
+    where TUser : UserDataBase
+    where TGlobal : class, new()
+{
+    public DbSet<TUser> UserData => Set<TUser>();
+    public DbSet<TGlobal> GlobalData => Set<TGlobal>();
 
     public DataContext(DbContextOptions options) : base(options) { }
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public void Init()
     {
-        modelBuilder.Entity<DnsBlockerConfig>().OwnsOne(
-            config => config.DomainsToBlock,
-            b => b.ToJson()
-        );
+        Database.EnsureCreated();
+
+        if (!GlobalData.Any())
+        {
+            TGlobal defaultGlobal = new();
+
+            Entry(defaultGlobal).Property("id").CurrentValue = "default";
+
+            GlobalData.Add(defaultGlobal);
+            SaveChanges();
+        }
     }
 
-    public async Task AddOrUpdate<T>(DbSet<T> dbSet, UserId userId, T data)
-        where T : class
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        T? existingEntity = await dbSet.FindAsync(userId);
+        // SQLite needs some sort of id, TGlobal doesn't contain any as there is only one element
+        modelBuilder.Entity<TGlobal>().Property<string>("id");
+        modelBuilder.Entity<TGlobal>().HasKey("id");
+
+        // Prevent shared table
+        modelBuilder.Entity<TUser>().ToTable("UserData");
+        modelBuilder.Entity<TGlobal>().ToTable("GlobalData");
+    }
+
+    public async Task<TUser?> GetUserData(UserId userId)
+    {
+        TUser? userData = await UserData.FindAsync(userId);
+        return userData;
+    }
+    public async Task SetUserData(UserId userId, TUser data)
+    {
+        if (data.UserId != userId)
+            throw new($"UserId mismatch! (\"{userId}\" != \"{data.UserId}\")");
+
+        TUser? existingEntity = await UserData.FindAsync(userId);
 
         if (existingEntity == null)
         {
-            dbSet.Add(data);
+            UserData.Add(data);
         }
         else
         {
             Entry(existingEntity).CurrentValues.SetValues(data);
         }
+        await SaveChangesAsync();
     }
-}
+    public async Task<TGlobal> GetGlobalData()
+    {
+        TGlobal? data = await GlobalData.FirstOrDefaultAsync();
 
-public class UserData
-{
-    [Key] public UserId UserId { get; set; } = UserId.Empty;
+        if (data == null)
+            throw new($"Global data ({typeof(TGlobal)}) is not initialized");
 
-    public string Name { get; set; } = string.Empty;
-}
+        return data;
+    }
+    public async Task SetGlobalData(TGlobal data)
+    {
+        TGlobal? existing = await GlobalData.FirstOrDefaultAsync();
 
-public class DnsBlockerConfig
-{
-    [Key] public UserId UserId { get; set; } = UserId.Empty;
+        if (existing == null)
+            throw new($"Global data ({typeof(TGlobal)}) is not initialized");
 
-    public bool Block { get; set; } = false;
-    public string IPAddress { get; set; } = string.Empty;
-    public DomainList DomainsToBlock { get; set; } = new();
-}
+        Entry(existing).CurrentValues.SetValues(data);
 
-public class DomainList
-{
-    public List<string> Domains { get; set; } = new();
+        await SaveChangesAsync();
+    }
 }

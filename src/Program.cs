@@ -9,23 +9,25 @@ public static class Program
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
 
         builder.Services.AddControllers();
-        builder.Services.AddDbContext<DataContext>(options => options.UseSqlite("Data Source=multi_service.db"));
-        builder.Services.AddHostedService<DnsBlocker>();
+
+        builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));
+        builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
+        builder.Services.AddHostedService<DnsBlocker.DnsBlocker>();
 
         WebApplication app = builder.Build();
 
-        // Create db if it doesnt exist yet
+        // Setup databases
+        Directory.CreateDirectory("data");
         using (var scope = app.Services.CreateScope())
         {
-            DataContext db = scope.ServiceProvider.GetRequiredService<DataContext>();
-            db.Database.EnsureCreated();
+            Directory.CreateDirectory("data/dnsblocker");
+            scope.ServiceProvider.GetRequiredService<DnsBlocker.ConfigContext>().Init();
+            scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
         }
 
         app.MapControllers();
 
         Console.WriteLine("Starting WebApplication");
-        app.RunAsync();
-
-        while (true) ;
+        app.Run();
     }
 }

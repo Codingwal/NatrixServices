@@ -1,9 +1,0 @@
-{
-    "block": true,
-    "ipAddresses": [
-        "192.168.178.140"
-    ],
-    "domainsToBlock": [
-        "jamf.com"
-    ]
-}

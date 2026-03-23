@@ -1,0 +1,1 @@
+curl -i localhost:5031/api/dnsblocker/config/abc123

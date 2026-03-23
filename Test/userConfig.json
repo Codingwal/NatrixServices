@@ -1,0 +1,10 @@
+{
+    "userId": "test1",
+    "enableBlocking": false,
+    "ipAddresses": [
+        "10.10.1.1"
+    ],
+    "domainsToBlock": [
+        "apple.com"
+    ]
+}

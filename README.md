@@ -4,7 +4,7 @@
 
 ## API
 
-Examples are in Test/
+Examples are in Examples/
 
 ### DnsBlocker
 

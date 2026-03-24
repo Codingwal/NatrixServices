@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace NatrixServices.DnsBlocker;
 
 [Route("api/dnsblocker/config")]
+[ApiController]
 public class ConfigUserAPI(ConfigContext ConfigContext) : ControllerBase
 {
     [HttpGet("blockingenabled/{userId}")]
@@ -83,6 +84,7 @@ public class ConfigUserAPI(ConfigContext ConfigContext) : ControllerBase
 }
 
 [Route("api/dnsblocker/config/global")]
+[ApiController]
 public class ConfigGlobalAPI(ConfigContext ConfigContext) : ControllerBase
 {
     [HttpGet("blockingenabled")]

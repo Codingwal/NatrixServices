@@ -11,12 +11,11 @@ Examples are in Examples/
 \[AdminOnly\]: <br>
 Header: ``` { "password": <AdminPassword> } ```
 
-### Users
-``` api/users/... ```
 
-#### api
+### DnsBlocker
+``` api/dnsblocker ```
 
-GET ``` create ``` ( Returns UserId ) <br>
+POST ``` createuser ``` ( Returns UserId ) <br>
 
 
 ### DnsBlocker/Config

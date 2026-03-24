@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace NatrixServices.DnsBlocker;
 
 [Route("api/dnsblocker/data")]
+[ApiController]
 public class DataUserAPI(DataContext DataContext) : ControllerBase
 {
     [HttpGet("lastrequest/{userId}")]
@@ -29,6 +30,7 @@ public class DataUserAPI(DataContext DataContext) : ControllerBase
 }
 
 [Route("api/dnsblocker/data/global")]
+[ApiController]
 public class DataGlobalAPI(DataContext DataContext) : ControllerBase
 {
     [HttpGet("lastrequest")]

@@ -33,29 +33,30 @@ public interface IBlockingConfig
 
 public class UserConfig : UserDataBase, IBlockingConfig
 {
-    public bool EnableBlocking { get; set; } = false;
+    [Required] public bool EnableBlocking { get; set; } = false;
     public List<DeviceConfig> Devices { get; set; } = [];
     public List<FilterReference> Filters { get; set; } = [];
 }
 public class DeviceConfig : IBlockingConfig
 {
-    public DeviceId Device { get; set; } = DeviceId.Empty;
-    public bool EnableBlocking { get; set; } = false;
+    [Required] public DeviceId Device { get; set; } = DeviceId.Empty;
+    [Required] public bool EnableBlocking { get; set; } = false;
 }
 public class FilterReference : IBlockingConfig
 {
-    public FilterId Filter { get; set; } = FilterId.Empty;
-    public bool EnableBlocking { get; set; } = true;
+    [Required] public FilterId Filter { get; set; } = FilterId.Empty;
+    [Required] public bool EnableBlocking { get; set; } = true;
 }
 
 public class GlobalConfig : IBlockingConfig
 {
-    public bool EnableBlocking { get; set; } = true;
-    public bool EnableDnsServer { get; set; } = true;
+    [Required] public bool EnableBlocking { get; set; } = true;
+    [Required] public bool EnableDnsServer { get; set; } = true;
     public Dictionary<FilterId, FilterConfig> Filters = [];
 }
 public class FilterConfig
 {
-    public FilterId Id { get; set; } = FilterId.Empty;
-    public List<string> DomainsToBlock { get; set; } = [];
+    [Required] public FilterId Id { get; set; } = FilterId.Empty;
+    public string Description { get; set; } = string.Empty;
+    [Required] public List<string> DomainsToBlock { get; set; } = [];
 }

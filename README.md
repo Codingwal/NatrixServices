@@ -44,6 +44,7 @@ FilterConfig:
 ```
 {
     "id": <FilterId>,
+    "description": <String>,
     "domainsToBlock": [<Domain>, ...]
 }
 ```

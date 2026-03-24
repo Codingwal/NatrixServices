@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>🛜 DNSblocker</title>
+</head>
+
+<body>
+    <div id="main">
+        <button id="toogle-btn"></button>
+        <br><br>
+        <center>
+            <span id="main-status-circle" class="status-circle"></span>
+            <span id="status-text">Unknown</span>
+        </center>
+        <br><br>
+        Filters<br>
+        <filters></filters>
+
+        <p>Activate some filters to customize your browsing on your Laptop or iPhone.</p>
+    </div>
+
+    <div id="instructions" hidden>
+        <span style="float: right; cursor: pointer; font-size: 24px;" onclick="closeInstructions()">X</span>
+        <h2>How to use DNSblocker</h2>
+        <span>Block sites and ads.<br><code>DNS-Server-IP: 123.123.123.123</code></span>
+        <h4>Setup on iOS</h4>
+        <p>Go in "Settings" > "Wifi" > Click on the small "i" at the current wifi > "Configure DNS" > "Manual" > Remove
+            all entries and add the IP from above > "Save" > Done!</p>
+
+        <h4>Setup on Windows 11</h4>
+        <p>Open "Settings" > "Network" > "Wifi" > Current Wifi > DNS-Attribution > "Manual" > Add IP from above at IPv4,
+            remove others > Done!</p>
+    </div>
+
+    <div style="font-size: 12px">
+        Still in development! <br> This demo project is intended for use by informed individuals only.
+        By using this service, you agree that your IP address will be stored. It will be used only for
+        assigning filters and will be deleted after 7 days of inactivity. Use at your own risk - no liability is
+        assumed for any damages. May only be used on devices for which you hold full ownership rights.
+    </div>
+</body>
+
+</html>
+
+<script src="api.js"></script>
+<script src="ui.js"></script>
+
+<script>
+    refreshUI();
+    displayFilters();
+</script>

@@ -7,18 +7,18 @@ namespace NatrixServices.DnsBlocker;
 public class ConfigUserAPI(ConfigContext ConfigContext) : ControllerBase
 {
     [HttpGet("blockingenabled/{userId}")]
-    public async Task<IActionResult> GetBlockingEnabled(UserId userId, [FromQuery] DeviceId? deviceId)
+    public async Task<IActionResult> GetBlockingEnabled(UserId userId, [FromQuery] DeviceId? deviceId, [FromQuery] FilterId? filterId)
     {
-        IBlockingConfig? config = await GetBlockingConfig(userId, deviceId);
+        IBlockingConfig? config = await GetBlockingConfig(userId, deviceId, filterId);
         if (config == null) return NotFound();
 
         return Ok(config.EnableBlocking);
     }
 
     [HttpPatch("blockingenabled/{userId}")]
-    public async Task<IActionResult> SetBlockingEnabled(UserId userId, [FromQuery] bool enabled, [FromQuery] DeviceId? deviceId)
+    public async Task<IActionResult> SetBlockingEnabled(UserId userId, [FromQuery] bool enabled, [FromQuery] DeviceId? deviceId, [FromQuery] FilterId? filterId)
     {
-        IBlockingConfig? config = await GetBlockingConfig(userId, deviceId);
+        IBlockingConfig? config = await GetBlockingConfig(userId, deviceId, filterId);
         if (config == null) return NotFound();
 
         config.EnableBlocking = enabled;
@@ -36,13 +36,28 @@ public class ConfigUserAPI(ConfigContext ConfigContext) : ControllerBase
         return Ok(userConfig.Devices);
     }
 
-    [HttpPatch("devices/{userId}")]
-    public async Task<IActionResult> SetDevices(UserId userId, [FromBody] List<DeviceConfig> devices)
+
+    [HttpPatch("devices/add/{userId}")]
+    public async Task<IActionResult> AddDevice(UserId userId, [FromBody] AddDeviceRequest data)
     {
         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
         if (userConfig == null) return NotFound();
 
-        userConfig.Devices = devices;
+        userConfig.Devices.Add(data.Device.Id, data.Device);
+        await ConfigContext.SaveChangesAsync();
+
+        return Ok();
+    }
+    public record AddDeviceRequest(DeviceConfig Device);
+
+    [HttpPatch("devices/remove/{userId}")]
+    public async Task<IActionResult> RemoveDevice(UserId userId, [FromQuery] DeviceId deviceId)
+    {
+        UserConfig? userConfig = await ConfigContext.GetUserData(userId);
+        if (userConfig == null) return NotFound();
+
+        userConfig.Devices.Remove(deviceId);
+        await ConfigContext.SaveChangesAsync();
 
         return Ok();
     }
@@ -57,29 +72,48 @@ public class ConfigUserAPI(ConfigContext ConfigContext) : ControllerBase
         return Ok(userConfig.Filters);
     }
 
-    [HttpPatch("filters/{userId}")]
-    public async Task<IActionResult> SetFilters(UserId userId, [FromBody] List<FilterReference> filters)
+    [HttpPatch("filters/add/{userId}")]
+    public async Task<IActionResult> AddFilter(UserId userId, [FromBody] AddFilterRequest data)
     {
         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
         if (userConfig == null) return NotFound();
 
-        userConfig.Filters = filters;
+        userConfig.Filters.Add(data.Filter.Id, data.Filter);
+        await ConfigContext.SaveChangesAsync();
+
+        return Ok();
+    }
+    public record AddFilterRequest(FilterReference Filter);
+
+    [HttpPatch("filters/remove/{userId}")]
+    public async Task<IActionResult> RemoveFilter(UserId userId, [FromQuery] FilterId filterId)
+    {
+        UserConfig? userConfig = await ConfigContext.GetUserData(userId);
+        if (userConfig == null) return NotFound();
+
+        userConfig.Filters.Remove(filterId);
+        await ConfigContext.SaveChangesAsync();
 
         return Ok();
     }
 
 
-    private async Task<IBlockingConfig?> GetBlockingConfig(UserId userId, DeviceId? deviceId)
+    private async Task<IBlockingConfig?> GetBlockingConfig(UserId userId, DeviceId? deviceId, FilterId? filterId)
     {
+        // Can't get a device and a filter at the same time
+        if (deviceId != null && filterId != null)
+            return null;
+
         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
         if (userConfig == null) return null;
 
-        if (deviceId == null)
-            return userConfig;
+        if (deviceId != null)
+            return userConfig.Devices.GetValueOrDefault(deviceId);
 
-        DeviceConfig? deviceConfig = userConfig.Devices.FirstOrDefault(device => device.Device == deviceId);
+        if (filterId != null)
+            return userConfig.Filters.GetValueOrDefault(filterId);
 
-        return deviceConfig;
+        return userConfig;
     }
 }
 
@@ -138,15 +172,16 @@ public class ConfigGlobalAPI(ConfigContext ConfigContext) : ControllerBase
 
     [HttpPatch("filters/add")]
     [AdminOnly]
-    public async Task<IActionResult> AddFilter([FromBody] FilterConfig filter)
+    public async Task<IActionResult> AddFilter([FromBody] AddFilterRequest data)
     {
         GlobalConfig config = await ConfigContext.GetGlobalData();
 
-        config.Filters.Add(filter.Id, filter);
+        config.Filters.Add(data.Filter.Id, data.Filter);
         await ConfigContext.SaveChangesAsync();
 
         return Ok();
     }
+    public record AddFilterRequest(FilterConfig Filter);
 
     [HttpPatch("filters/remove")]
     [AdminOnly]

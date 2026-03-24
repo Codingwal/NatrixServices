@@ -1,0 +1,122 @@
+:root {
+    --bg-active: linear-gradient(125deg, limegreen, greenyellow);
+    --bg-inactive: linear-gradient(125deg, orangered, orange);
+    --bg-unknown: linear-gradient(125deg, grey, lightgray);
+
+    --active: limegreen;
+    --inactive: orangered;
+    --unknown: darkgrey;
+    --alwaysactive: purple;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-unknown);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+* {
+    font-family: monospace;
+    color: black;
+}
+
+body>div {
+    box-sizing: border-box;
+    padding: 20px;
+    max-height: calc(100% - 10px);
+    overflow: auto;
+    margin: 5px;
+    width: 600px;
+    max-width: calc(100% - 10px);
+}
+
+#status-text {
+    font-size: 16px;
+    text-align: center;
+}
+
+#toogle-btn {
+    width: 200px;
+    height: 200px;
+    border-radius: 100%;
+    border: none;
+    margin-left: 50%;
+    margin-right: -100%;
+    translate: -50%;
+
+    font-size: 24px;
+    color: white;
+
+    background: var(--unknown);
+
+    cursor: pointer;
+}
+
+@keyframes click {
+    0% {
+        scale: 1;
+    }
+
+    50% {
+        scale: 0.9;
+    }
+
+    100% {
+        scale: 1;
+    }
+}
+
+.status-circle {
+    width: 12px;
+    height: 12px;
+    border-radius: 100%;
+    display: inline-block;
+    background-color: var(--unknown);
+
+    margin-bottom: -1.5px;
+}
+
+[alwaysactive] {
+    background-color: var(--alwaysactive);
+}
+
+[active] {
+    background-color: var(--active);
+}
+
+[inactive] {
+    background-color: var(--inactive);
+}
+
+[clickable] {
+    cursor: pointer;
+    user-select: none;
+}
+
+div {
+    background: #ffffff80;
+    border-radius: 10px;
+    margin-top: 10px;
+    padding: 10px;
+}
+
+p {
+    font-size: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+    * {
+        color: white;
+    }
+
+    div {
+        background: #00000080;
+    }
+}

@@ -23,20 +23,20 @@ POST ``` createuser ``` ( Returns UserId ) <br>
 
 #### Structures
 
-DeviceList:
+DeviceConfig:
 ```
-[
-    {"device": <DeviceId>, "enableBlocking": <Bool>},
-    ...
-]
+{
+    "id": <DeviceId>, 
+    "enableBlocking": <Bool>
+}
 ```
 
-FilterReferenceList:
+FilterReference:
 ```
-[
-    {"filter": <FilterId>, "enableBlocking": <Bool>},
-    ...
-]
+{
+    "id": <FilterId>, 
+    "enableBlocking": <Bool>
+}
 ```
 
 FilterConfig:
@@ -48,28 +48,23 @@ FilterConfig:
 }
 ```
 
-FilterConfigs:
-```
-{
-    <FilterId>: <FilterConfig>,
-    ...
-}
-```
 
 #### User api
 GET ``` blockingenabled/<UserId>?deviceId=<DeviceId> ``` ( Returns Bool ) <br> 
-PATCH ``` blockingenabled/<UserId>?enabled=<Bool>&deviceId=<DeviceId?> ```<br>
-GET ``` devices/<UserId> ``` ( Returns DeviceList ) <br>
-PATCH ``` devices/<UserId> ``` ( Body: ``` { "devices": <DeviceList>} ``` ) <br>
-GET ``` filters/<UserId> ``` ( Returns FilterReferenceList ) <br>
-PATCH ``` filters/<UserId> ``` ( Body: ``` { "filters": <FilterReferenceList>} ``` ) <br>
+PATCH ``` blockingenabled/<UserId>?enabled=<Bool>&deviceId=<DeviceId?>&filterId=<FilterId> ```<br>
+GET ``` devices/<UserId> ``` ( Returns: ``` {<DeviceId>: <DeviceConfig>, ...} ``` ) <br>
+PATCH ``` devices/add/<UserId> ``` ( Body: ``` { "device": <Device>} ``` ) <br>
+PATCH ``` devices/remove/<UserId>?deviceId=<DeviceId> ``` <br>
+GET ``` filters/<UserId> ``` ( Returns: ``` {<FilterId>: <FilterReference>, ...} ``` ) <br>
+PATCH ``` devices/add/<UserId> ``` ( Body: ``` { "filter": <FilterReference>} ``` ) <br>
+PATCH ``` devices/remove/<UserId>?filterId=<FilterId> ``` <br>
 
 #### Global api
 GET ``` global/blockingenabled ``` ( Returns Bool ) <br>
 PATCH ``` global/blockingenabled?enabled=<Bool> ``` [AdminOnly] <br>
 GET ``` global/dnsenabled ``` ( Returns Bool ) <br>
 PATCH ``` global/dnsenabled?enabled=<Bool> ``` [AdminOnly] <br>
-GET ``` global/filters ``` ( Returns FilterConfigList ) <br>
+GET ``` global/filters ``` ( Returns: ``` {<FilterId>: <FilterConfig>, ...} ``` ) <br>
 PATCH ``` global/filters/add ```[AdminOnly] ( Body: ``` { "filter": <FilterConfig> } ``` ) <br>
 PATCH ``` global/filters/remove?filterId=<FilterId> ``` [AdminOnly] <br>
 

@@ -10,13 +10,28 @@ public static class Program
 
         builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin()
+                    .AllowAnyMethod() // allow PATCH, DELETE, ...
+                    .AllowAnyHeader();
+            });
+        });
+
         builder.Services.AddControllers();
 
         builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));
         builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
-        builder.Services.AddHostedService<DnsBlocker.DnsBlocker>();
+        // builder.Services.AddHostedService<DnsBlocker.DnsBlocker>();
 
         WebApplication app = builder.Build();
+
+        app.UseCors();
+
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
 
         // Setup databases
         Directory.CreateDirectory("data");

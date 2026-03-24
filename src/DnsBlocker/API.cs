@@ -14,6 +14,8 @@ public class API(DataContext DataContext, ConfigContext ConfigContext) : Control
         await DataContext.SetUserData(userId, new UserData() { UserId = userId });
         await ConfigContext.SetUserData(userId, new UserConfig() { UserId = userId });
 
+        Console.WriteLine($"Created user {userId}");
+
         return Created("", userId);
     }
 }

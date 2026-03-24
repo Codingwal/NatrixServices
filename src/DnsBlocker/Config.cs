@@ -34,17 +34,17 @@ public interface IBlockingConfig
 public class UserConfig : UserDataBase, IBlockingConfig
 {
     [Required] public bool EnableBlocking { get; set; } = false;
-    public List<DeviceConfig> Devices { get; set; } = [];
-    public List<FilterReference> Filters { get; set; } = [];
+    public Dictionary<DeviceId, DeviceConfig> Devices { get; set; } = [];
+    public Dictionary<FilterId, FilterReference> Filters { get; set; } = [];
 }
 public class DeviceConfig : IBlockingConfig
 {
-    [Required] public DeviceId Device { get; set; } = DeviceId.Empty;
+    [Required] public DeviceId Id { get; set; } = DeviceId.Empty;
     [Required] public bool EnableBlocking { get; set; } = false;
 }
 public class FilterReference : IBlockingConfig
 {
-    [Required] public FilterId Filter { get; set; } = FilterId.Empty;
+    [Required] public FilterId Id { get; set; } = FilterId.Empty;
     [Required] public bool EnableBlocking { get; set; } = true;
 }
 

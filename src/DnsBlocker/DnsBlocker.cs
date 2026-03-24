@@ -25,7 +25,9 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
     {
         try
         {
-            await HandleQuery(sender, e);
+            if (e.Query is not DnsMessage query) return;
+            e.Response = await ProcessDnsQuery(query, null, null);
+
             logger.LogInformation("Finished handling dns request");
         }
         catch (Exception exception)
@@ -33,13 +35,9 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
             logger.LogError($"DnsBlocker error: {exception.Message}");
         }
     }
-    private async Task HandleQuery(object sender, QueryReceivedEventArgs e)
+    private async Task<DnsMessage?> ProcessDnsQuery(DnsMessage query, UserId? userId, DeviceId? deviceId)
     {
-        DnsMessage? query = e.Query as DnsMessage;
-
-        // Check if there really is a question
-        if (query == null || query.Questions.Count == 0)
-            return;
+        if (query.Questions.Count == 0) return null;
 
         logger.LogInformation($"Received request");
 
@@ -52,7 +50,7 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
         if (!globalConfig.EnableDnsServer)
         {
             logger.LogInformation($"Ignoring request because globalConfig.EnableDnsServer is false");
-            return;
+            return null;
         }
 
         // Get the domain which ip is requested
@@ -63,7 +61,7 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
 
         // Block or forward the DNS request
         DnsMessage response = query.CreateResponseInstance();
-        if (BlockDomain(domainName, globalConfig))
+        if (BlockDomain(domainName, globalConfig, userId, deviceId))
         {
             logger.LogInformation($"Blocking \"{domainName}\"");
             response.ReturnCode = ReturnCode.NxDomain;
@@ -84,9 +82,9 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
 
         await UpdateData(scope);
 
-        e.Response = response;
+        return response;
     }
-    private static bool BlockDomain(string domainName, GlobalConfig globalConfig)
+    private static bool BlockDomain(string domainName, GlobalConfig globalConfig, UserId? userId, DeviceId? deviceId)
     {
         // Is blocking enabled locally and globally?
         if (!globalConfig.EnableBlocking)
@@ -113,7 +111,7 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
         // Update global data
         GlobalData globalData = await dataContext.GetGlobalData();
         globalData.DnsRequestCount++;
-        globalData.LastRequestTime = DateTimeOffset.UtcNow;
+        globalData.LastRequest = new();
         await dataContext.SetGlobalData(globalData);
     }
 

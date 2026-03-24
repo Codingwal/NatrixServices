@@ -8,7 +8,19 @@ Examples are in Examples/
 
 \<UserId\>, \<DeviceId\>, \<FilterId\> and \<Domain\> are strings.
 
+\[AdminOnly\]: <br>
+Header: ``` { "password": <AdminPassword> } ```
+
+### Users
+``` api/users/... ```
+
+#### api
+
+GET ``` create ``` ( Returns UserId ) <br>
+
+
 ### DnsBlocker/Config
+``` api/dnsblocker/config/... ```
 
 #### Structures
 
@@ -44,11 +56,6 @@ FilterConfigs:
 }
 ```
 
-#### Attributes
-
-\[AdminOnly\]: <br>
-Header: ``` { "password": <AdminPassword> } ```
-
 #### User api
 GET ``` blockingenabled/<UserId>?deviceId=<DeviceId> ``` ( Returns Bool ) <br> 
 PATCH ``` blockingenabled/<UserId>?enabled=<Bool>&deviceId=<DeviceId?> ```<br>
@@ -66,7 +73,9 @@ GET ``` global/filters ``` ( Returns FilterConfigList ) <br>
 PATCH ``` global/filters/add ```[AdminOnly] ( Body: ``` { "filter": <FilterConfig> } ``` ) <br>
 PATCH ``` global/filters/remove?filterId=<FilterId> ``` [AdminOnly] <br>
 
+
 ### DnsBlocker/Data
+``` api/dnsblocker/data/... ```
 
 #### Structures
 
@@ -84,3 +93,7 @@ DnsRequest:
 #### User api
 GET ``` lastrequest/<UserId> ``` ( Returns DnsRequest ) <br>
 GET ``` dnsrequestcount/<UserId> ``` ( Returns Integer ) <br>
+
+#### Global api
+GET ``` global/lastrequest/<UserId> ``` [AdminOnly] ( Returns DnsRequest ) <br>
+GET ``` global/dnsrequestcount/<UserId> ``` [AdminOnly] ( Returns Integer ) <br>

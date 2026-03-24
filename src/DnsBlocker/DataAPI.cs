@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace NatrixServices.DnsBlocker;
 
 [Route("api/dnsblocker/data")]
-public class DataAPI(DataContext DataContext) : ControllerBase
+public class DataUserAPI(DataContext DataContext) : ControllerBase
 {
     [HttpGet("lastrequest/{userId}")]
     public async Task<IActionResult> GetLastRequest(UserId userId)
@@ -25,5 +25,27 @@ public class DataAPI(DataContext DataContext) : ControllerBase
             return NotFound();
 
         return Ok(userData.DnsRequestCount);
+    }
+}
+
+[Route("api/dnsblocker/data/global")]
+public class DataGlobalAPI(DataContext DataContext) : ControllerBase
+{
+    [HttpGet("lastrequest")]
+    [AdminOnly]
+    public async Task<IActionResult> GetLastRequest()
+    {
+        GlobalData globalData = await DataContext.GetGlobalData();
+
+        return Ok(globalData.LastRequest);
+    }
+
+    [HttpGet("dnsrequestcount")]
+    [AdminOnly]
+    public async Task<IActionResult> GetRequestCount()
+    {
+        GlobalData globalData = await DataContext.GetGlobalData();
+
+        return Ok(globalData.DnsRequestCount);
     }
 }

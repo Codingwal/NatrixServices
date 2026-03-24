@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace NatrixServices.DnsBlocker;
 
 [Route("api/dnsblocker/config")]
-public class ConfigAPI(ConfigContext ConfigContext) : ControllerBase
+public class ConfigUserAPI(ConfigContext ConfigContext) : ControllerBase
 {
     [HttpGet("blockingenabled/{userId}")]
     public async Task<IActionResult> GetBlockingEnabled(UserId userId, [FromQuery] DeviceId? deviceId)

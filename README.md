@@ -8,12 +8,52 @@ Examples are in Examples/
 
 ### DnsBlocker
 
-*GET api/dnsblocker/config/\<userId\>* **Gets the current config for the user** <br>
-*POST api/dnsblocker/config* **Sets the config for the user** (userId is part of the json) <br>
-*GET api/dnsblocker/config/global* **Gets the current global config** (requires admin password in header!) <br>
-*POST api/dnsblocker/config/global* **Sets the current global config** (requires admin password in header!) <br>
+DeviceList:
+```
+[
+    {"device": "{deviceId}", "enableBlocking": "{enabled}"},
+    ...
+]
+```
 
-*GET api/dnsblocker/data/\<userId\>* **Gets the current data for the user** <br>
-*POST api/dnsblocker/data* **Sets the data for the user** (userId is part of the json) (requires admin password in header!) <br>
-*GET api/dnsblocker/data/global* **Gets the current global data** (requires admin password in header!) <br>
-*POST api/dnsblocker/data/global* **Sets the current global data** (requires admin password in header!) <br>
+FilterReferenceList:
+```
+[
+    {"filter": "{filterId}", "enableBlocking": "{enabled}"},
+    ...
+]
+```
+
+FilterConfig:
+```
+{
+    "id": "{filterId}",
+    "domainsToBlock": ["{domain1}", "{domain2}", ...]
+}
+```
+
+FilterConfigs:
+```
+{
+    "{filterId}": \<FilterConfig\>
+    ...
+}
+```
+
+\[AdminOnly\]: <br>
+Header: { "password" "{adminPassword}" }
+
+*GET config/blockingenabled/{userId}?deviceId={deviceId}* <br>
+*PATCH config/blockingenabled/{userId}?enabled={enabled}&deviceId={deviceId}* <br>
+*GET config/devices/{userId}* ( Returns: \<DeviceList\> ) <br>
+*PATCH config/devices/{userId}* ( Body: { "devices": \<DeviceList\>} ) <br>
+*GET config/filters/{userId}* ( Returns: \<FilterReferenceList\> ) <br>
+*PATCH config/filters/{userId}* ( Body: { "filters": \<FilterReferenceList\>} ) <br>
+
+*GET config/global/blockingenabled* <br>
+*PATCH config/global/blockingenabled?enabled={enabled}* [AdminOnly] <br>
+*GET config/global/dnsenabled* <br>
+*PATCH config/global/dnsenabled?enabled={enabled}* [AdminOnly] <br>
+*GET config/global/filters* ( Body: { "filters": \<FilterConfigList\>} ) <br>
+*PATCH config/global/filters/add* [AdminOnly] ( Body: { "filter": \<FilterConfig\> } ) <br>
+*PATCH config/global/filters/remove?filterId={filterId}* [AdminOnly] <br>

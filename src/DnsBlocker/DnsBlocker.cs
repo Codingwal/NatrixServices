@@ -41,11 +41,7 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
         if (query == null || query.Questions.Count == 0)
             return;
 
-
-        IPAddress ipAddr = e.RemoteEndpoint.Address.MapToIPv4();
-        string ipAddrStr = ipAddr.ToString();
-
-        logger.LogInformation($"Received request from {ipAddr}");
+        logger.LogInformation($"Received request");
 
         // Get the DataContext
         using IServiceScope scope = serviceProvider.CreateScope();
@@ -59,24 +55,15 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
             return;
         }
 
-        // Check if the ip address is registered in the config of a user
-        List<UserConfig> users = await configContext.UserData.ToListAsync();
-        UserConfig? userConfig = users.FirstOrDefault(x => x.IPAddresses.Contains(ipAddrStr));
-        if (userConfig == null)
-        {
-            logger.LogInformation($"Ignoring request from {ipAddr} as it is not listed in any users list");
-            return;
-        }
-
         // Get the domain which ip is requested
         DnsQuestion question = query.Questions[0];
         string domainName = question.Name.ToString();
 
-        logger.LogInformation($"Handling request to {domainName} by {ipAddr}");
+        logger.LogInformation($"Handling request to {domainName}");
 
         // Block or forward the DNS request
         DnsMessage response = query.CreateResponseInstance();
-        if (BlockDomain(domainName, userConfig, globalConfig))
+        if (BlockDomain(domainName, globalConfig))
         {
             logger.LogInformation($"Blocking \"{domainName}\"");
             response.ReturnCode = ReturnCode.NxDomain;
@@ -95,31 +82,33 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
                 logger.LogError("Error: upstreamResponse is null");
         }
 
-        await UpdateData(scope, userConfig.UserId);
+        await UpdateData(scope);
 
         e.Response = response;
     }
-    private static bool BlockDomain(string domainName, UserConfig userConfig, GlobalConfig globalConfig)
+    private static bool BlockDomain(string domainName, GlobalConfig globalConfig)
     {
         // Is blocking enabled locally and globally?
-        if (!globalConfig.EnableBlocking || !userConfig.EnableBlocking)
+        if (!globalConfig.EnableBlocking)
             return false;
 
+        string[] domainsToBlock = ["jamf", "test.de"];
+
         // Check if the domain should be blocked
-        bool blockDomain = userConfig.DomainsToBlock.Any(x => domainName.Contains(x, StringComparison.OrdinalIgnoreCase));
+        bool blockDomain = domainsToBlock.Any(x => domainName.Contains(x, StringComparison.OrdinalIgnoreCase));
 
         return blockDomain;
     }
 
-    private static async Task UpdateData(IServiceScope scope, UserId userId)
+    private static async Task UpdateData(IServiceScope scope)
     {
         var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
 
-        // Update user data
-        UserData userData = await dataContext.GetUserData(userId) ?? new();
-        userData.DnsRequestCount++;
-        userData.LastRequestTime = DateTimeOffset.UtcNow;
-        await dataContext.SetUserData(userId, userData);
+        // // Update user data
+        // UserData userData = await dataContext.GetUserData(userId) ?? new();
+        // userData.DnsRequestCount++;
+        // userData.LastRequestTime = DateTimeOffset.UtcNow;
+        // await dataContext.SetUserData(userId, userData);
 
         // Update global data
         GlobalData globalData = await dataContext.GetGlobalData();

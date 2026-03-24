@@ -1,17 +1,21 @@
 # NatrixServices
 
-**NatrixServices contains multiple independent services hosted on a server. These are supposed to be used by Natrix.**
+NatrixServices contains multiple independent services hosted on a server. These are supposed to be used by Natrix.
 
 ## API
 
 Examples are in Examples/
 
-### DnsBlocker
+\<UserId\>, \<DeviceId\>, \<FilterId\> and \<Domain\> are strings.
+
+### DnsBlocker/Config
+
+#### Structures
 
 DeviceList:
 ```
 [
-    {"device": "{deviceId}", "enableBlocking": "{enabled}"},
+    {"device": <DeviceId>, "enableBlocking": <Bool>},
     ...
 ]
 ```
@@ -19,7 +23,7 @@ DeviceList:
 FilterReferenceList:
 ```
 [
-    {"filter": "{filterId}", "enableBlocking": "{enabled}"},
+    {"filter": <FilterId>, "enableBlocking": <Bool>},
     ...
 ]
 ```
@@ -27,33 +31,56 @@ FilterReferenceList:
 FilterConfig:
 ```
 {
-    "id": "{filterId}",
-    "domainsToBlock": ["{domain1}", "{domain2}", ...]
+    "id": <FilterId>,
+    "domainsToBlock": [<Domain>, ...]
 }
 ```
 
 FilterConfigs:
 ```
 {
-    "{filterId}": \<FilterConfig\>
+    <FilterId>: <FilterConfig>,
     ...
 }
 ```
 
+#### Attributes
+
 \[AdminOnly\]: <br>
-Header: { "password" "{adminPassword}" }
+Header: ``` { "password": <AdminPassword> } ```
 
-*GET config/blockingenabled/{userId}?deviceId={deviceId}* <br>
-*PATCH config/blockingenabled/{userId}?enabled={enabled}&deviceId={deviceId}* <br>
-*GET config/devices/{userId}* ( Returns: \<DeviceList\> ) <br>
-*PATCH config/devices/{userId}* ( Body: { "devices": \<DeviceList\>} ) <br>
-*GET config/filters/{userId}* ( Returns: \<FilterReferenceList\> ) <br>
-*PATCH config/filters/{userId}* ( Body: { "filters": \<FilterReferenceList\>} ) <br>
+#### User api
+GET ``` blockingenabled/<UserId>?deviceId=<DeviceId> ``` ( Returns Bool ) <br> 
+PATCH ``` blockingenabled/<UserId>?enabled=<Bool>&deviceId=<DeviceId?> ```<br>
+GET ``` devices/<UserId> ``` ( Returns DeviceList ) <br>
+PATCH ``` devices/<UserId> ``` ( Body: ``` { "devices": <DeviceList>} ``` ) <br>
+GET ``` filters/<UserId> ``` ( Returns FilterReferenceList ) <br>
+PATCH ``` filters/<UserId> ``` ( Body: ``` { "filters": <FilterReferenceList>} ``` ) <br>
 
-*GET config/global/blockingenabled* <br>
-*PATCH config/global/blockingenabled?enabled={enabled}* [AdminOnly] <br>
-*GET config/global/dnsenabled* <br>
-*PATCH config/global/dnsenabled?enabled={enabled}* [AdminOnly] <br>
-*GET config/global/filters* ( Body: { "filters": \<FilterConfigList\>} ) <br>
-*PATCH config/global/filters/add* [AdminOnly] ( Body: { "filter": \<FilterConfig\> } ) <br>
-*PATCH config/global/filters/remove?filterId={filterId}* [AdminOnly] <br>
+#### Global api
+GET ``` global/blockingenabled ``` ( Returns Bool ) <br>
+PATCH ``` global/blockingenabled?enabled=<Bool> ``` [AdminOnly] <br>
+GET ``` global/dnsenabled ``` ( Returns Bool ) <br>
+PATCH ``` global/dnsenabled?enabled=<Bool> ``` [AdminOnly] <br>
+GET ``` global/filters ``` ( Returns FilterConfigList ) <br>
+PATCH ``` global/filters/add ```[AdminOnly] ( Body: ``` { "filter": <FilterConfig> } ``` ) <br>
+PATCH ``` global/filters/remove?filterId=<FilterId> ``` [AdminOnly] <br>
+
+### DnsBlocker/Data
+
+#### Structures
+
+DnsRequest:
+```
+{
+    "time": <TimeStamp>,
+    "domain": <Domain>,
+    "blocked": <Bool>,
+    "userId": <UserId>,
+    "deviceId": <DeviceId>
+}
+```
+
+#### User api
+GET ``` lastrequest/<UserId> ``` ( Returns DnsRequest ) <br>
+GET ``` dnsrequestcount/<UserId> ``` ( Returns Integer ) <br>

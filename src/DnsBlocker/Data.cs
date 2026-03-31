@@ -33,11 +33,11 @@ public class GlobalData
     public DnsRequest LastRequest { get; set; } = new();
 }
 
-public class DnsRequest
+public record DnsRequest
 {
     public DateTimeOffset Time { get; set; } = default;
     public string Domain { get; set; } = string.Empty;
     public bool Blocked { get; set; } = false;
-    public UserId UserId { get; set; } = UserId.Empty;
-    public DeviceId DeviceId { get; set; } = string.Empty;
+    public UserId? UserId { get; set; } = null;
+    public DeviceId? DeviceId { get; set; } = null;
 }

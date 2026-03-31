@@ -50,14 +50,14 @@ FilterConfig:
 
 
 #### User api
-GET ``` blockingenabled/<UserId>?deviceId=<DeviceId> ``` ( Returns Bool ) <br> 
+GET ``` blockingenabled/<UserId>?deviceId=<DeviceId>&filterId=<FilterId> ``` ( Returns Bool ) <br> 
 PATCH ``` blockingenabled/<UserId>?enabled=<Bool>&deviceId=<DeviceId?>&filterId=<FilterId> ```<br>
 GET ``` devices/<UserId> ``` ( Returns: ``` {<DeviceId>: <DeviceConfig>, ...} ``` ) <br>
-PATCH ``` devices/add/<UserId> ``` ( Body: ``` { "device": <Device>} ``` ) <br>
+PATCH ``` devices/add/<UserId> ``` ( Body: ``` { "device": <DeviceConfig>} ``` ) <br>
 PATCH ``` devices/remove/<UserId>?deviceId=<DeviceId> ``` <br>
 GET ``` filters/<UserId> ``` ( Returns: ``` {<FilterId>: <FilterReference>, ...} ``` ) <br>
-PATCH ``` devices/add/<UserId> ``` ( Body: ``` { "filter": <FilterReference>} ``` ) <br>
-PATCH ``` devices/remove/<UserId>?filterId=<FilterId> ``` <br>
+PATCH ``` filters/add/<UserId> ``` ( Body: ``` { "filter": <FilterReference>} ``` ) <br>
+PATCH ``` filters/remove/<UserId>?filterId=<FilterId> ``` <br>
 
 #### Global api
 GET ``` global/blockingenabled ``` ( Returns Bool ) <br>

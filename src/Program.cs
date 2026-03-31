@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using NatrixServices.Chess;
 
 namespace NatrixServices;
 
@@ -6,45 +8,80 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        ChessTest();
 
-        builder.WebHost.UseUrls("http://0.0.0.0:5000");
+        // WebApplicationBuilder builder = WebApplication.CreateBuilder();
 
-        builder.Services.AddCors(options =>
+        // builder.WebHost.UseUrls("http://0.0.0.0:5000");
+
+        // builder.Services.AddCors(options =>
+        // {
+        //     options.AddDefaultPolicy(policy =>
+        //     {
+        //         policy.AllowAnyOrigin()
+        //             .AllowAnyMethod() // allow PATCH, DELETE, ...
+        //             .AllowAnyHeader();
+        //     });
+        // });
+
+        // builder.Services.AddControllers();
+
+        // builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));
+        // builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
+        // builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
+
+        // WebApplication app = builder.Build();
+
+        // app.UseCors();
+
+        // app.UseDefaultFiles();
+
+        // app.UseForwardedHeaders(new ForwardedHeadersOptions
+        // {
+        //     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        // });
+
+        // app.UseStaticFiles();
+
+        // // Setup databases
+        // Directory.CreateDirectory("data");
+        // using (var scope = app.Services.CreateScope())
+        // {
+        //     Directory.CreateDirectory("data/dnsblocker");
+        //     scope.ServiceProvider.GetRequiredService<DnsBlocker.ConfigContext>().Init();
+        //     scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
+        // }
+
+        // app.MapControllers();
+
+        // Console.WriteLine("Starting WebApplication");
+        // app.Run();
+    }
+
+
+    private static void ChessTest()
+    {
+        ChessGame game = new();
+
+        while (true)
         {
-            options.AddDefaultPolicy(policy =>
+            Console.Write("From: ");
+            string from = Console.ReadLine()!;
+            Console.Write("To: ");
+            string to = Console.ReadLine()!;
+
+            try
             {
-                policy.AllowAnyOrigin()
-                    .AllowAnyMethod() // allow PATCH, DELETE, ...
-                    .AllowAnyHeader();
-            });
-        });
+                game.DoMove(from, to);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ERROR: " + e.Message);
+            }
 
-        builder.Services.AddControllers();
-
-        builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));
-        builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
-        // builder.Services.AddHostedService<DnsBlocker.DnsBlocker>();
-
-        WebApplication app = builder.Build();
-
-        app.UseCors();
-
-        app.UseDefaultFiles();
-        app.UseStaticFiles();
-
-        // Setup databases
-        Directory.CreateDirectory("data");
-        using (var scope = app.Services.CreateScope())
-        {
-            Directory.CreateDirectory("data/dnsblocker");
-            scope.ServiceProvider.GetRequiredService<DnsBlocker.ConfigContext>().Init();
-            scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
+            game.PrintBoard();
+            Console.WriteLine("");
         }
 
-        app.MapControllers();
-
-        Console.WriteLine("Starting WebApplication");
-        app.Run();
     }
 }

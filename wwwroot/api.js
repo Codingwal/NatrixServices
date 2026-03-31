@@ -34,10 +34,14 @@ async function getDevices() {
     devices = response;
 }
 
-async function patchDevices() {
-    await request('PATCH', 'config/devices/' + userId, {
-        devices: devices
+async function addDevice(device) {
+    await request('PATCH', 'config/filters/' + userId, {
+        device: device
     });
+}
+
+async function removeDevice(deviceId) {
+    await request('PATCH', 'config/filters/' + userId + '?deviceId=' + deviceId);
 }
 
 async function isConnected() {
@@ -71,8 +75,12 @@ async function getFilters() {
     filters = JSON.parse(filters);
 }
 
-async function patchFilters() {
+async function addFilter(filter) {
     await request('PATCH', 'config/filters/' + userId, {
-        filters: filters
+        filter: filter
     });
+}
+
+async function removeFilter(filterId) {
+    await request('PATCH', 'config/filters/' + userId + '?filterId=' + filterId);
 }

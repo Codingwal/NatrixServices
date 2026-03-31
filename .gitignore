@@ -5,3 +5,5 @@ appsettings.Development.json
 appsettings.json
 
 Examples/DnsBlocker/dnsLookup.sh
+
+data/

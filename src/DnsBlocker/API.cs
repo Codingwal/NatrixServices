@@ -9,12 +9,13 @@ public class API(DataContext DataContext, ConfigContext ConfigContext) : Control
     [HttpPost("createuser")]
     public async Task<IActionResult> CreateUser()
     {
-        UserId userId = NatrixServices.User.Create();
+        UserId userId = Utility.GenerateId();
 
-        await DataContext.SetUserData(userId, new UserData() { UserId = userId });
-        await ConfigContext.SetUserData(userId, new UserConfig() { UserId = userId });
+        await DataContext.UserData.AddAsync(new UserData() { UserId = userId });
+        await DataContext.SaveChangesAsync();
 
-        Console.WriteLine($"Created user {userId}");
+        await ConfigContext.UserData.AddAsync(new UserConfig() { UserId = userId });
+        await ConfigContext.SaveChangesAsync();
 
         return Created("", userId);
     }

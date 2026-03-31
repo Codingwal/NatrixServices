@@ -1,22 +1,20 @@
-using System.Net;
 using ARSoft.Tools.Net.Dns;
-using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices.DnsBlocker;
 
-public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> logger) : BackgroundService
+public class DnsBlockerService(IServiceProvider ServiceProvider, ILogger<DnsBlockerService> Logger) : BackgroundService
 {
     private readonly DnsServer server = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Starting DNS server");
+        Logger.LogInformation("Starting DNS server");
         server.QueryReceived += OnQueryReceived;
         server.Start();
 
         await Task.Delay(Timeout.Infinite, stoppingToken);
 
-        logger.LogInformation("Stopping DNS server");
+        Logger.LogInformation("Stopping DNS server");
         server.QueryReceived -= OnQueryReceived;
         server.Stop();
     }
@@ -26,30 +24,36 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
         try
         {
             if (e.Query is not DnsMessage query) return;
-            e.Response = await ProcessDnsQuery(query, null, null);
 
-            logger.LogInformation("Finished handling dns request");
+            // using IServiceScope scope = ServiceProvider.CreateScope();
+            var configContext = ServiceProvider.GetRequiredService<ConfigContext>();
+            var dataContext = ServiceProvider.GetRequiredService<DataContext>();
+
+            DnsBlocker dnsBlocker = new(Logger, configContext, dataContext);
+            e.Response = await dnsBlocker.ProcessDnsQuery(query, null, null);
+
+            Logger.LogInformation("Finished handling dns request");
         }
         catch (Exception exception)
         {
-            logger.LogError($"DnsBlocker error: {exception.Message}");
+            Logger.LogError($"DnsBlocker error: {exception.Message}");
         }
     }
-    private async Task<DnsMessage?> ProcessDnsQuery(DnsMessage query, UserId? userId, DeviceId? deviceId)
+}
+
+public class DnsBlocker(ILogger Logger, ConfigContext ConfigContext, DataContext DataContext)
+{
+    public async Task<DnsMessage?> ProcessDnsQuery(DnsMessage query, UserId? userId, DeviceId? deviceId)
     {
         if (query.Questions.Count == 0) return null;
 
-        logger.LogInformation($"Received request");
-
         // Get the DataContext
-        using IServiceScope scope = serviceProvider.CreateScope();
-        var configContext = scope.ServiceProvider.GetRequiredService<ConfigContext>();
-        GlobalConfig globalConfig = await configContext.GetGlobalData();
+        GlobalConfig globalConfig = await ConfigContext.GetGlobalData();
 
         // Return if the dns server should do nothing at all
         if (!globalConfig.EnableDnsServer)
         {
-            logger.LogInformation($"Ignoring request because globalConfig.EnableDnsServer is false");
+            Logger.LogInformation($"Ignoring request because globalConfig.EnableDnsServer is false");
             return null;
         }
 
@@ -57,18 +61,19 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
         DnsQuestion question = query.Questions[0];
         string domainName = question.Name.ToString();
 
-        logger.LogInformation($"Handling request to {domainName}");
+        Logger.LogInformation($"Handling request to {domainName}");
 
         // Block or forward the DNS request
         DnsMessage response = query.CreateResponseInstance();
-        if (BlockDomain(domainName, globalConfig, userId, deviceId))
+        bool blockDomain = await BlockDomain(domainName, userId, deviceId, ConfigContext);
+        if (blockDomain)
         {
-            logger.LogInformation($"Blocking \"{domainName}\"");
+            Logger.LogInformation($"Blocking \"{domainName}\"");
             response.ReturnCode = ReturnCode.NxDomain;
         }
         else
         {
-            logger.LogInformation($"Forwarding \"{domainName}\"");
+            Logger.LogInformation($"Forwarding \"{domainName}\"");
             DnsMessage? upstreamResponse = await ForwardQuestion(question);
 
             if (upstreamResponse != null)
@@ -77,42 +82,87 @@ public class DnsBlocker(IServiceProvider serviceProvider, ILogger<DnsBlocker> lo
                 response.ReturnCode = upstreamResponse.ReturnCode;
             }
             else
-                logger.LogError("Error: upstreamResponse is null");
+                Logger.LogError("Error: upstreamResponse is null");
         }
 
-        await UpdateData(scope);
+        DnsRequest requestData = new()
+        {
+            Time = DateTimeOffset.UtcNow,
+            Domain = domainName,
+            Blocked = blockDomain,
+            UserId = userId,
+            DeviceId = deviceId
+        };
+
+        await UpdateData(requestData);
 
         return response;
     }
-    private static bool BlockDomain(string domainName, GlobalConfig globalConfig, UserId? userId, DeviceId? deviceId)
+    private static async Task<bool> BlockDomain(string domainName, UserId? userId, DeviceId? deviceId, ConfigContext configContext)
     {
-        // Is blocking enabled locally and globally?
+        GlobalConfig globalConfig = await configContext.GetGlobalData();
+
         if (!globalConfig.EnableBlocking)
             return false;
 
-        string[] domainsToBlock = ["jamf", "test.de"];
+        List<string> domainsToBlock = [];
+        if (userId == null)
+            domainsToBlock = ["jamf", "test.de"];
+        else
+        {
+            UserConfig? userConfig = await configContext.GetUserData(userId);
+            if (userConfig == null) return false;
 
-        // Check if the domain should be blocked
+            if (!BlockingEnabled(userConfig, deviceId, globalConfig))
+                return false;
+
+            domainsToBlock = GetDomainsToBlock(userConfig, globalConfig);
+        }
+
         bool blockDomain = domainsToBlock.Any(x => domainName.Contains(x, StringComparison.OrdinalIgnoreCase));
 
         return blockDomain;
     }
-
-    private static async Task UpdateData(IServiceScope scope)
+    private static bool BlockingEnabled(UserConfig userConfig, DeviceId? deviceId, GlobalConfig globalConfig)
     {
-        var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+        if (!globalConfig.EnableBlocking)
+            return false;
 
-        // // Update user data
-        // UserData userData = await dataContext.GetUserData(userId) ?? new();
-        // userData.DnsRequestCount++;
-        // userData.LastRequestTime = DateTimeOffset.UtcNow;
-        // await dataContext.SetUserData(userId, userData);
+        if (deviceId == null)
+            return userConfig.EnableBlocking;
 
-        // Update global data
-        GlobalData globalData = await dataContext.GetGlobalData();
+        if (!userConfig.Devices.TryGetValue(deviceId, out DeviceConfig? deviceConfig))
+            return false;
+
+        return deviceConfig.EnableBlocking;
+    }
+    private static List<string> GetDomainsToBlock(UserConfig userConfig, GlobalConfig globalConfig)
+    {
+        List<string> domainsToBlock = [];
+        foreach ((_, FilterReference filterRef) in userConfig.Filters)
+        {
+            if (!globalConfig.Filters.TryGetValue(filterRef.Id, out FilterConfig? filterConfig))
+                continue;
+
+            domainsToBlock.AddRange(filterConfig.DomainsToBlock);
+        }
+        return domainsToBlock;
+    }
+
+    private async Task UpdateData(DnsRequest requestData)
+    {
+        GlobalData globalData = await DataContext.GetGlobalData();
         globalData.DnsRequestCount++;
-        globalData.LastRequest = new();
-        await dataContext.SetGlobalData(globalData);
+        globalData.LastRequest = requestData;
+
+        if (requestData.UserId != null)
+        {
+            UserData userData = await DataContext.GetUserData(requestData.UserId) ?? new();
+            userData.DnsRequestCount++;
+            userData.LastRequest = requestData with { }; // with { } creates a shallow copy
+        }
+
+        await DataContext.SaveChangesAsync();
     }
 
     private static async Task<DnsMessage?> ForwardQuestion(DnsQuestion question)

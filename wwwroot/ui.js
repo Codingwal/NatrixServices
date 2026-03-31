@@ -20,11 +20,7 @@ async function start() {
     if (deviceId === null) { // create device if needed
         await getDevices();
         deviceId = prompt('How do you want name your device?');
-        devices.push({
-            device: deviceId,
-            enableBlocking: true
-        });
-        await patchDevices();
+        await addDevice({id: deviceId, enableBlocking: true})
         localStorage.setItem('deviceId', deviceId);
     }
 

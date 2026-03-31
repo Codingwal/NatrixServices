@@ -11,14 +11,12 @@ public abstract class UserDataBase
     public string UserId { get; set; } = string.Empty;
 }
 
-public class DataContext<TUser, TGlobal> : DbContext
+public class DataContext<TUser, TGlobal>(DbContextOptions options) : DbContext(options)
     where TUser : UserDataBase
     where TGlobal : class, new()
 {
     public DbSet<TUser> UserData => Set<TUser>();
     public DbSet<TGlobal> GlobalData => Set<TGlobal>();
-
-    public DataContext(DbContextOptions options) : base(options) { }
 
     public void Init()
     {
@@ -51,23 +49,6 @@ public class DataContext<TUser, TGlobal> : DbContext
         TUser? userData = await UserData.FindAsync(userId);
         return userData;
     }
-    public async Task SetUserData(UserId userId, TUser data)
-    {
-        if (data.UserId != userId)
-            throw new($"UserId mismatch! (\"{userId}\" != \"{data.UserId}\")");
-
-        TUser? existingEntity = await UserData.FindAsync(userId);
-
-        if (existingEntity == null)
-        {
-            UserData.Add(data);
-        }
-        else
-        {
-            Entry(existingEntity).CurrentValues.SetValues(data);
-        }
-        await SaveChangesAsync();
-    }
     public async Task<TGlobal> GetGlobalData()
     {
         TGlobal? data = await GlobalData.SingleOrDefaultAsync();
@@ -76,16 +57,5 @@ public class DataContext<TUser, TGlobal> : DbContext
             throw new($"Global data ({typeof(TGlobal)}) is not initialized");
 
         return data;
-    }
-    public async Task SetGlobalData(TGlobal data)
-    {
-        TGlobal? existing = await GlobalData.FirstOrDefaultAsync();
-
-        if (existing == null)
-            throw new($"Global data ({typeof(TGlobal)}) is not initialized");
-
-        Entry(existing).CurrentValues.SetValues(data);
-
-        await SaveChangesAsync();
     }
 }

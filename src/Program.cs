@@ -61,27 +61,5 @@ public static class Program
 
     private static void ChessTest()
     {
-        ChessGame game = new();
-
-        while (true)
-        {
-            Console.Write("From: ");
-            string from = Console.ReadLine()!;
-            Console.Write("To: ");
-            string to = Console.ReadLine()!;
-
-            try
-            {
-                game.DoMove(from, to);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("ERROR: " + e.Message);
-            }
-
-            game.PrintBoard();
-            Console.WriteLine("");
-        }
-
     }
 }

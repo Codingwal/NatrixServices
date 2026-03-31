@@ -8,7 +8,7 @@ public abstract class UserDataBase
     [Key]
     [Required]
     [StringLength(8)]
-    public string UserId { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
 }
 
 public class DataContext<TUser, TGlobal>(DbContextOptions options) : DbContext(options)
@@ -44,18 +44,15 @@ public class DataContext<TUser, TGlobal>(DbContextOptions options) : DbContext(o
         modelBuilder.Entity<TGlobal>().ToTable("GlobalData");
     }
 
-    public async Task<TUser?> GetUserData(UserId userId)
+    public async Task<TUser?> GetUserData(string username)
     {
-        TUser? userData = await UserData.FindAsync(userId);
+        TUser? userData = await UserData.FindAsync(username);
         return userData;
     }
     public async Task<TGlobal> GetGlobalData()
     {
-        TGlobal? data = await GlobalData.SingleOrDefaultAsync();
-
-        if (data == null)
-            throw new($"Global data ({typeof(TGlobal)}) is not initialized");
-
+        TGlobal? data = await GlobalData.SingleOrDefaultAsync()
+            ?? throw new($"Global data ({typeof(TGlobal)}) is not initialized");
         return data;
     }
 }

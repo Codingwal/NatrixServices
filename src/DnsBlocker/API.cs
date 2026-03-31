@@ -11,10 +11,10 @@ public class API(DataContext DataContext, ConfigContext ConfigContext) : Control
     {
         UserId userId = Utility.GenerateId();
 
-        await DataContext.UserData.AddAsync(new UserData() { UserId = userId });
+        await DataContext.UserData.AddAsync(new UserData() { Username = userId });
         await DataContext.SaveChangesAsync();
 
-        await ConfigContext.UserData.AddAsync(new UserConfig() { UserId = userId });
+        await ConfigContext.UserData.AddAsync(new UserConfig() { Username = userId });
         await ConfigContext.SaveChangesAsync();
 
         return Created("", userId);

@@ -1,27 +1,28 @@
 namespace NatrixServices.Chess;
 
-public partial class ChessGame
+public partial class ChessEngine
 {
     /* Board helper methods */
-    private ChessPiece? FindPiece(Figures figure, Players player)
+    private Int2? FindPiece(char piece)
     {
-        return FindPiece(x => x.Figure == figure && x.Player == player);
+        return FindPiece(x => x == piece);
     }
-    private ChessPiece? FindPiece(Func<ChessPiece, bool> predicate)
+    private Int2? FindPiece(Func<char, bool> predicate)
     {
-        foreach (ChessPiece piece in Fields)
-            if (predicate(piece)) return piece;
+        for (int x = 0; x < 8; x++)
+            for (int y = 0; y < 8; y++)
+                if (predicate(Game.Fields[x, y]))
+                    return new Int2(x, y);
         return null;
     }
-    public ChessPiece GetPiece(Int2 pos)
+    public char GetPiece(Int2 pos)
     {
-        return Fields[pos.x, pos.y];
+        return Game.Fields[pos.x, pos.y];
     }
-    private bool FieldEmpty(Int2 pos)
+    private bool IsEmpty(Int2 pos)
     {
-        return GetPiece(pos).Figure == Figures.None;
+        return GetPiece(pos) == ' ';
     }
-
 
     /* Int2 helper methods */
     private static Int2 GetDirection(Int2 from, Int2 to)
@@ -50,6 +51,13 @@ public partial class ChessGame
         else
             throw new Exception($"Invalid player {player}");
     }
+    private static Players GetPlayer(char field)
+    {
+        if (field == ' ')
+            return Players.None;
+
+        return char.IsUpper(field) ? Players.White : Players.Black;
+    }
 
 
     /* Bounds checks */
@@ -70,7 +78,7 @@ public partial class ChessGame
 
 
     /* To (or from) string */
-    private static Int2 FieldDescToPos(string str)
+    public static Int2 FieldDescToPos(string str)
     {
         if (str.Length != 2) throw new ArgumentException($"Field descriptions must have a length of 2");
 
@@ -78,15 +86,11 @@ public partial class ChessGame
         int y = str[1] - '1';
         return new(x, y);
     }
-    private static string PosToFieldDesc(Int2 pos)
+    public static string PosToFieldDesc(Int2 pos)
     {
         char posX = (char)('a' + pos.x);
         char posY = (char)('1' + pos.y);
         return $"{posX}{posY}";
-    }
-    private static string PieceDescription(ChessPiece piece)
-    {
-        return $"{piece.FigureSymbol()}{PosToFieldDesc(piece.Pos)}";
     }
     public void PrintBoard()
     {
@@ -96,14 +100,14 @@ public partial class ChessGame
             str += $"{y + 1}. ";
             for (int x = 0; x < 8; x++)
             {
-                str += Fields[x, y].ToString() + ' ';
+                str += Game.Fields[x, y] + ' ';
             }
             str += '\n';
         }
 
         str += "   ";
         for (int x = 0; x < 8; x++)
-            str += $" {(char)('a' + x)}   ";
+            str += $"{(char)('a' + x)} ";
 
         Console.WriteLine(str);
     }

@@ -1,220 +1,213 @@
 namespace NatrixServices.Chess;
 
-public partial class ChessGame
+public partial class ChessEngine(ChessGame Game)
 {
-    public ChessPiece[,] Fields { get; private set; } = new ChessPiece[8, 8];
-    public Players NextPlayer { get; private set; } = Players.White;
-    public ChessGame()
+    public string? DoMove(MoveDTO move)
     {
-        CreateEdgeRow(0, Players.White);
-        CreateRow(1, Figures.Pawn, Players.White);
-        CreateRow(2, Figures.None, Players.None);
-        CreateRow(3, Figures.None, Players.None);
-        CreateRow(4, Figures.None, Players.None);
-        CreateRow(5, Figures.None, Players.None);
-        CreateRow(6, Figures.Pawn, Players.Black);
-        CreateEdgeRow(7, Players.Black);
+        return DoMove(new Move(FieldDescToPos(move.From), FieldDescToPos(move.To)));
     }
-    private void CreateEdgeRow(int row, Players player)
+    public string? DoMove(Move move)
     {
-        Fields[0, row] = new(new(0, row), Figures.Rook, player);
-        Fields[1, row] = new(new(1, row), Figures.Knight, player);
-        Fields[2, row] = new(new(2, row), Figures.Bishop, player);
-        Fields[3, row] = new(new(3, row), Figures.Queen, player);
-        Fields[4, row] = new(new(4, row), Figures.King, player);
-        Fields[5, row] = new(new(5, row), Figures.Bishop, player);
-        Fields[6, row] = new(new(6, row), Figures.Knight, player);
-        Fields[7, row] = new(new(7, row), Figures.Rook, player);
-    }
-    private void CreateRow(int row, Figures figure, Players player)
-    {
-        for (int i = 0; i < 8; i++)
-            Fields[i, row] = new ChessPiece(new(i, row), figure, player);
+        string? error = CheckMove(move);
+        if (error != null) return error;
+
+        Game.Fields[move.Destination.x, move.Destination.y] = GetPiece(move.Origin);
+        Game.Fields[move.Origin.x, move.Origin.y] = ' ';
+
+        Game.NextPlayer = OtherPlayer(Game.NextPlayer);
+
+        return null;
     }
 
-    public void DoMove(string start, string dest)
+    public string? CheckMove(Move move)
     {
-        DoMove(FieldDescToPos(start), FieldDescToPos(dest));
-    }
-    public void DoMove(Int2 start, Int2 dest)
-    {
-        ChessPiece piece = GetPiece(start) with { };
+        string? error = CheckMoveNoCheck(move);
+        if (error != null) return error;
 
-        DoMove(new Move(piece, start, dest));
-    }
-    public void DoMove(Move move)
-    {
-        CheckMove(move);
+        char piece = GetPiece(move.Origin);
+        char oldDestPiece = GetPiece(move.Destination);
 
-        ChessPiece old = GetPiece(move.Destination);
+        Game.Fields[move.Origin.x, move.Origin.y] = ' ';
+        Game.Fields[move.Destination.x, move.Destination.y] = piece;
 
-        Fields[move.Origin.x, move.Origin.y] = new ChessPiece(move.Origin);
-        Fields[move.Destination.x, move.Destination.y] = new ChessPiece(move.Destination, move.Piece.Figure, move.Piece.Player);
-
-        if (InCheck(move.Piece.Player))
+        if (InCheck(GetPlayer(piece)))
         {
             // Revert move
-            Fields[move.Origin.x, move.Origin.y] = new ChessPiece(move.Origin, move.Piece.Figure, move.Piece.Player);
-            Fields[move.Destination.x, move.Destination.y] = old;
+            Game.Fields[move.Origin.x, move.Origin.y] = piece;
+            Game.Fields[move.Destination.x, move.Destination.y] = oldDestPiece;
 
-            throw new IllegalMoveException($"You can't be in check after your move");
+            return $"You can't be in check after your move";
         }
 
-        NextPlayer = OtherPlayer(NextPlayer);
+        return null;
     }
 
-    public void CheckMove(Move move)
+    public List<MoveDTO> GetAllowedMoves()
+    {
+        List<MoveDTO> allowedMoves = [];
+
+        for (int x = 0; x < 8; x++)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                allowedMoves.AddRange(GetAllowedMoves(new Int2(x, y)));
+            }
+        }
+
+        return allowedMoves;
+    }
+    public List<MoveDTO> GetAllowedMoves(string field)
+    {
+        return GetAllowedMoves(FieldDescToPos(field));
+    }
+    private List<MoveDTO> GetAllowedMoves(Int2 pos)
+    {
+        List<MoveDTO> allowedMoves = [];
+
+        for (int x = 0; x < 8; x++)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                Move move = new(pos, new Int2(x, y));
+                if (CheckMove(move) == null)
+                    allowedMoves.Add(new MoveDTO(move));
+            }
+        }
+
+        return allowedMoves;
+    }
+
+    /// <returns>null if the move is valid, otherwise an error message</returns>
+    private string? CheckMoveNoCheck(Move move)
     {
         CheckBounds(move.Origin);
         CheckBounds(move.Destination);
 
-        if (move.Piece.Player == Players.None)
-            throw new ArgumentException($"There is no piece on the starting field");
+        if (IsEmpty(move.Origin))
+            return "There is no piece on the starting field";
 
-        if (move.Piece.Player != NextPlayer)
-            throw new ArgumentException($"It's the turn of {NextPlayer}, not yours");
+        char startPiece = GetPiece(move.Origin);
+        char destPiece = GetPiece(move.Destination);
+        Players player = GetPlayer(startPiece);
 
-        ChessPiece piece = GetPiece(move.Origin);
+        if (player != Game.NextPlayer)
+            return $"It's the turn of {Game.NextPlayer}, not yours";
 
-        if (piece != move.Piece)
-            throw new ArgumentException($"The specified piece is not the piece on the origin field ({move.Piece} != {piece})");
+        if (GetPlayer(destPiece) == player)
+            return $"Can't capture your own piece";
 
-        if (GetPiece(move.Destination).Player == move.Piece.Player)
-            throw new IllegalMoveException($"Can't capture your own piece");
-
-        switch (piece.Figure)
+        return char.ToLower(startPiece) switch
         {
-            case Figures.Pawn:
-                CheckPawnMove(move);
-                break;
-            case Figures.Rook:
-            case Figures.Bishop:
-            case Figures.Queen:
-                CheckLineMove(move);
-                break;
-            case Figures.Knight:
-                CheckKnightMove(move);
-                break;
-            case Figures.King:
-                CheckKingMove(move);
-                break;
-            default:
-                throw new ArgumentException($"Invalid figure {piece.Figure}");
-        }
+            'p' => CheckPawnMove(move, player),
+            'r' or 'b' or 'q' => CheckLineMove(move),
+            'n' => CheckKnightMove(move),
+            'k' => CheckKingMove(move),
+            _ => throw new ArgumentException($"Invalid figure '{startPiece}'"),
+        };
     }
 
-    private void CheckPawnMove(Move move)
+    private string? CheckPawnMove(Move move, Players player)
     {
-        int moveDir = move.Piece.Player == Players.White ? 1 : -1;
+        int moveDir = (player == Players.White) ? 1 : -1;
 
         // Straight?
         if (move.Destination == move.Origin + new Int2(0, moveDir))
         {
-            if (!FieldEmpty(move.Destination))
-                throw new IllegalMoveException("The pawn can't capture straight");
-            return;
+            if (!IsEmpty(move.Destination))
+                return "The pawn can not capture straight";
+            return null;
         }
 
+        // Double move?
         if (move.Destination == move.Origin + new Int2(0, moveDir * 2))
         {
-            if ((move.Piece.Player == Players.White && move.Origin.y != 1)
-                || (move.Piece.Player == Players.Black && move.Origin.y != 6))
+            if ((player == Players.White && move.Origin.y != 1)
+                || (player == Players.Black && move.Origin.y != 6))
             {
-                throw new IllegalMoveException("Two-step move is only allowed if the pawn is on his starting field");
+                return "Two-step move is only allowed if the pawn is on his starting field";
             }
 
-            if (!FieldEmpty(move.Destination))
-                throw new IllegalMoveException("The pawn can't capture straight");
-            return;
+            if (!IsEmpty(move.Destination))
+                return "The pawn can not capture straight";
+            return null;
         }
 
-        // Diagonal?
+        // Not Diagonal?
         if (move.Destination != move.Origin + new Int2(1, moveDir)
             && move.Destination != move.Origin + new Int2(-1, moveDir))
-            throw new IllegalMoveException("The pawn can only move straight or diagonal (one field)");
+            return "The pawn can only move straight or diagonal (one field)";
 
-        ChessPiece destPiece = GetPiece(move.Destination);
+        if (IsEmpty(move.Destination))
+            return "The pawn can't move diagonal unless he captures";
 
-        // Must belong to the opposition
-        if (destPiece.Player != OtherPlayer(move.Piece.Player))
-            throw new IllegalMoveException("The pawn can't move diagonal unless he captures");
+        return null;
     }
 
-    private void CheckLineMove(Move move)
+    private string? CheckLineMove(Move move)
     {
         bool isStraight = IsStraight(move.Origin, move.Destination);
         bool isDiagonal = IsDiagonal(move.Origin, move.Destination);
 
-        switch (move.Piece.Figure)
+        switch (char.ToLower(GetPiece(move.Origin)))
         {
-            case Figures.Rook:
-                if (!isStraight) throw new IllegalMoveException("The rook can only move straight");
+            case 'r':
+                if (!isStraight) return "The rook can only move straight";
                 break;
-            case Figures.Bishop:
-                if (!isDiagonal) throw new IllegalMoveException("The bishop can only move diagonal");
+            case 'b':
+                if (!isDiagonal) return "The bishop can only move diagonal";
                 break;
-            case Figures.Queen:
-                if (!isStraight && !isDiagonal) throw new IllegalMoveException("The queen can only move straight or diagonal");
+            case 'q':
+                if (!isStraight && !isDiagonal) return "The queen can only move straight or diagonal";
                 break;
             default:
-                throw new Exception($"Expected rook, bishop or queen, not {move.Piece.Figure}");
+                throw new Exception($"Expected rook, bishop or queen, not '{GetPiece(move.Origin)}'");
         }
 
         Int2 dir = GetDirection(move.Origin, move.Destination);
 
         for (Int2 pos = move.Origin + dir; pos != move.Destination; pos += dir)
         {
-            ChessPiece piece = GetPiece(pos);
-
-            if (pos == move.Destination)
-                return;
-
-            if (piece.Figure != Figures.None)
-                throw new IllegalMoveException($"Can't jump over pieces (you are trying to jump over {PieceDescription(piece)})");
+            if (!IsEmpty(pos))
+                return $"Can't jump over pieces (you are trying to jump over {GetPiece(pos)} at {PosToFieldDesc(pos)})";
         }
+
+        return null;
     }
 
-    private static void CheckKnightMove(Move move)
+    private static string? CheckKnightMove(Move move)
     {
         Int2 diff = Int2.Abs(move.Destination - move.Origin);
 
         if (!((diff.x == 1 && diff.y == 2) || (diff.x == 2 && diff.y == 1)))
-            throw new IllegalMoveException($"The knight must move in an L shape");
+            return $"The knight must move in an L shape";
+        return null;
     }
 
-    private static void CheckKingMove(Move move)
+    private static string? CheckKingMove(Move move)
     {
         Int2 diff = move.Destination - move.Origin;
 
         if (Math.Abs(diff.x) > 1 || Math.Abs(diff.y) > 1)
-            throw new IllegalMoveException($"The king can only move one field");
+            return $"The king can only move one field";
+        return null;
     }
 
     private bool InCheck(Players player)
     {
-        ChessPiece king = FindPiece(Figures.King, player) ?? throw new Exception($"Could not find king of player {player}");
+        Int2 kingPos = FindPiece(player == Players.White ? 'K' : 'k') ?? throw new Exception($"Could not find king of player {player}");
 
-        foreach (ChessPiece piece in Fields)
+        for (int x = 0; x < 8; x++)
         {
-            if (piece.Player != OtherPlayer(player))
-                continue;
+            for (int y = 0; y < 8; y++)
+            {
+                char piece = Game.Fields[x, y];
+                if (GetPlayer(piece) != OtherPlayer(player))
+                    continue;
 
-            if (CanMakeMove(new Move(piece, piece.Pos, king.Pos)))
-                return true;
+                if (CheckMove(new Move(new Int2(x, y), kingPos)) == null)
+                    return true;
+            }
         }
         return false;
-    }
-
-    private bool CanMakeMove(Move move)
-    {
-        try
-        {
-            CheckMove(move);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

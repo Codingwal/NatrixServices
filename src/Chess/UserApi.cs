@@ -28,7 +28,7 @@ public class UserApi(DataContext DataContext, Users.DataContext UserDataContext)
         List<GameData> games = await DataContext.GameData
             .Where(g => (!onlyPublic || g.IsPublic) && (g.Player1 == username || g.Player2 == username)).ToListAsync();
 
-        return Ok(new GameListDTO { Games = games });
+        return Ok(new GameListDTO(games));
     }
 
     [HttpGet("{username}/stats")]

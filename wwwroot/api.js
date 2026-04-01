@@ -4,7 +4,7 @@ let userId = 'test';
 let deviceId = 'best_device_of_the_world';
 
 let devices = [];
-let filters = [];
+let filters = {};
 
 async function request(type, url, content = {}) {
     let options = {
@@ -28,26 +28,19 @@ async function createUser() {
 
 async function getDevices() {
     let response = await request('GET', 'config/devices/' + userId);
-
     response = JSON.parse(response);
-
     devices = response;
 }
 
-async function addDevice(device) {
-    await request('PATCH', 'config/filters/' + userId, {
-        device: device
+async function patchDevices() {
+    await request('PATCH', 'config/devices/' + userId, {
+        devices: devices
     });
-}
-
-async function removeDevice(deviceId) {
-    await request('PATCH', 'config/filters/' + userId + '?deviceId=' + deviceId);
 }
 
 async function isConnected() {
     let response = await request('GET', 'data/lastrequest/' + userId);
     response = JSON.parse(response);
-    
     if (
         response.deviceId == deviceId &&
         (new Date - new Date(response.time) / 1000) < 60
@@ -71,16 +64,17 @@ async function disableBlocking() {
 }
 
 async function getFilters() {
-    filters = await request('GET', 'config/filters/' + userId);
-    filters = JSON.parse(filters);
+    let response = await request('GET', 'config/filters/' + userId);
+    response = JSON.parse(response);
+    filters = response;
 }
 
-async function addFilter(filter) {
-    await request('PATCH', 'config/filters/' + userId, {
-        filter: filter
+async function enableFilter(filterId) {
+    await request('PATCH', 'config/filters/add/' + userId, {
+        filter: filterId
     });
 }
 
-async function removeFilter(filterId) {
-    await request('PATCH', 'config/filters/' + userId + '?filterId=' + filterId);
+async function disableFilter(filterId) {
+    await request('PATCH', 'config/filters/add/' + userId + '?filterId=' + filterId);
 }

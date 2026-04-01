@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using NatrixServices.Chess;
 
 namespace NatrixServices;
 
@@ -8,58 +7,61 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        ChessTest();
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
 
-        // WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseUrls("http://0.0.0.0:5000");
 
-        // builder.WebHost.UseUrls("http://0.0.0.0:5000");
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin()
+                    .AllowAnyMethod() // allow PATCH, DELETE, ...
+                    .AllowAnyHeader();
+            });
+        });
 
-        // builder.Services.AddCors(options =>
-        // {
-        //     options.AddDefaultPolicy(policy =>
-        //     {
-        //         policy.AllowAnyOrigin()
-        //             .AllowAnyMethod() // allow PATCH, DELETE, ...
-        //             .AllowAnyHeader();
-        //     });
-        // });
+        builder.Services.AddControllers();
 
-        // builder.Services.AddControllers();
+        builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));
+        builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
+        builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
 
-        // builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));
-        // builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
-        // builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
+        builder.Services.AddDbContext<Chess.DataContext>(options => options.UseSqlite("Data Source=data/chess/data.db"));
 
-        // WebApplication app = builder.Build();
+        builder.Services.AddDbContext<Users.DataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
 
-        // app.UseCors();
+        WebApplication app = builder.Build();
 
-        // app.UseDefaultFiles();
+        app.UseCors();
 
-        // app.UseForwardedHeaders(new ForwardedHeadersOptions
-        // {
-        //     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-        // });
+        app.UseDefaultFiles();
 
-        // app.UseStaticFiles();
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
 
-        // // Setup databases
-        // Directory.CreateDirectory("data");
-        // using (var scope = app.Services.CreateScope())
-        // {
-        //     Directory.CreateDirectory("data/dnsblocker");
-        //     scope.ServiceProvider.GetRequiredService<DnsBlocker.ConfigContext>().Init();
-        //     scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
-        // }
+        app.UseStaticFiles();
 
-        // app.MapControllers();
+        // Setup databases
+        Directory.CreateDirectory("data");
+        using (var scope = app.Services.CreateScope())
+        {
+            Directory.CreateDirectory("data/dnsblocker");
+            scope.ServiceProvider.GetRequiredService<DnsBlocker.ConfigContext>().Init();
+            scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
 
-        // Console.WriteLine("Starting WebApplication");
-        // app.Run();
-    }
+            Directory.CreateDirectory("data/chess");
+            scope.ServiceProvider.GetRequiredService<Chess.DataContext>().Init();
 
+            Directory.CreateDirectory("data/users");
+            scope.ServiceProvider.GetRequiredService<Users.DataContext>().Init();
+        }
 
-    private static void ChessTest()
-    {
+        app.MapControllers();
+
+        Console.WriteLine("Starting WebApplication");
+        app.Run();
     }
 }

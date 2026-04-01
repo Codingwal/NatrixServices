@@ -120,3 +120,11 @@ p {
         background: #00000080;
     }
 }
+
+#userid {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: fit-content;
+    font-size: 12px;
+}

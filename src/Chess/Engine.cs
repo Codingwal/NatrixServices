@@ -8,15 +8,101 @@ public partial class ChessEngine(ChessGame Game)
     }
     public string? DoMove(Move move)
     {
+        // Check if the move is valid
         string? error = CheckMove(move);
         if (error != null) return error;
 
-        Game.Fields[move.Destination.x, move.Destination.y] = GetPiece(move.Origin);
-        Game.Fields[move.Origin.x, move.Origin.y] = ' ';
+        // Get move info before executing it
+        char piece = GetPiece(move.Origin);
+        Players player = GetPlayer(piece);
+        char capturedPiece = GetPiece(move.Destination);
 
+        // Update the board
+        SetField(move.Destination, piece);
+        SetField(move.Origin, ' ');
+
+        // Handle en passant capture
+        if (char.ToLower(piece) == 'p' && move.Destination == Game.EnPassantTarget)
+        {
+            Int2 capturedPawnPos = move.Destination + new Int2(0, (player == Players.White) ? -1 : 1);
+            capturedPiece = GetPiece(capturedPawnPos);
+            SetField(capturedPawnPos, ' ');
+        }
+
+        // Handle promotion
+        if (move.Promotion != null)
+        {
+            if (player == Players.White)
+                SetField(move.Destination, char.ToUpper(move.Promotion.Value));
+            else
+                SetField(move.Destination, char.ToLower(move.Promotion.Value));
+        }
+
+        // Handle castling
+        if (char.ToLower(piece) == 'k' && Math.Abs(move.Destination.x - move.Origin.x) == 2)
+        {
+            int y = (player == Players.White) ? 0 : 7;
+            if (move.Destination.x == 6) // Kingside
+            {
+                SetField(new Int2(5, y), GetPiece(new Int2(7, y)));
+                SetField(new Int2(7, y), ' ');
+            }
+            else // Queenside
+            {
+                SetField(new Int2(3, y), GetPiece(new Int2(0, y)));
+                SetField(new Int2(0, y), ' ');
+            }
+        }
+
+        // Switch player
         Game.NextPlayer = OtherPlayer(Game.NextPlayer);
 
+        UpdateCastlingRights(move, piece);
+
+        // Update en passant target
+        if (char.ToLower(piece) == 'p' && Math.Abs(move.Destination.y - move.Origin.y) == 2)
+            Game.EnPassantTarget = move.Origin + new Int2(0, (player == Players.White) ? 1 : -1);
+        else
+            Game.EnPassantTarget = null;
+
+        // Update the half move clock (reset if a pawn moved or a piece was captured)
+        if (capturedPiece != ' ' || char.ToLower(piece) == 'p')
+            Game.HalfMovesSinceAction = 0;
+        else
+            Game.HalfMovesSinceAction++;
+
+        // MoveCount starts at 1 and is incremented after Black's move
+        if (player == Players.Black)
+            Game.MoveCount++;
+
         return null;
+    }
+    private void UpdateCastlingRights(Move move, char piece)
+    {
+        if (piece == 'K')
+        {
+            Game.CastleKingWhite = false;
+            Game.CastleQueenWhite = false;
+        }
+        else if (piece == 'R')
+        {
+            if (move.Origin == new Int2(0, 0))
+                Game.CastleQueenWhite = false;
+            else if (move.Origin == new Int2(7, 0))
+                Game.CastleKingWhite = false;
+        }
+        else if (piece == 'k')
+        {
+            Game.CastleKingBlack = false;
+            Game.CastleQueenBlack = false;
+        }
+        else if (piece == 'r')
+        {
+            if (move.Origin == new Int2(0, 7))
+                Game.CastleQueenBlack = false;
+            else if (move.Origin == new Int2(7, 7))
+                Game.CastleKingBlack = false;
+        }
     }
 
     public string? CheckMove(Move move)
@@ -96,14 +182,32 @@ public partial class ChessEngine(ChessGame Game)
         if (GetPlayer(destPiece) == player)
             return $"Can't capture your own piece";
 
-        return char.ToLower(startPiece) switch
+        string? error = char.ToLower(startPiece) switch
         {
             'p' => CheckPawnMove(move, player),
             'r' or 'b' or 'q' => CheckLineMove(move),
             'n' => CheckKnightMove(move),
-            'k' => CheckKingMove(move),
+            'k' => CheckKingMove(move, player),
             _ => throw new ArgumentException($"Invalid figure '{startPiece}'"),
         };
+        if (error != null) return error;
+
+        return CheckPromotion(move, startPiece);
+    }
+
+    private static string? CheckPromotion(Move move, char piece)
+    {
+        if (move.Promotion == null)
+            return null;
+
+        if (char.ToLower(piece) != 'p')
+            return "Only pawns can be promoted";
+
+        char newPiece = char.ToLower(move.Promotion.Value);
+        if (newPiece != 'q' && newPiece != 'r' && newPiece != 'b' && newPiece != 'n')
+            return "Invalid promotion piece";
+
+        return null;
     }
 
     private string? CheckPawnMove(Move move, Players player)
@@ -137,8 +241,12 @@ public partial class ChessEngine(ChessGame Game)
             && move.Destination != move.Origin + new Int2(-1, moveDir))
             return "The pawn can only move straight or diagonal (one field)";
 
-        if (IsEmpty(move.Destination))
-            return "The pawn can't move diagonal unless he captures";
+        // Normal capture
+        if (!IsEmpty(move.Destination))
+            return null;
+
+        if (move.Destination != Game.EnPassantTarget)
+            return "The pawn can't move diagonal unless he captures (or en passant)";
 
         return null;
     }
@@ -183,12 +291,52 @@ public partial class ChessEngine(ChessGame Game)
         return null;
     }
 
-    private static string? CheckKingMove(Move move)
+    private string? CheckKingMove(Move move, Players player)
     {
         Int2 diff = move.Destination - move.Origin;
 
+        string? castleError = CheckCastling(move, player, out bool castle);
+        if (castle) return castleError;
+
         if (Math.Abs(diff.x) > 1 || Math.Abs(diff.y) > 1)
             return $"The king can only move one field";
+
+        return null;
+    }
+    private string? CheckCastling(Move move, Players player, out bool castle)
+    {
+        Int2 diff = move.Destination - move.Origin;
+        int y = (player == Players.White) ? 0 : 7;
+
+        if (diff == new Int2(-2, 0))
+        {
+            castle = true;
+
+            if ((player == Players.White && !Game.CastleQueenWhite) || (player == Players.Black && !Game.CastleQueenBlack))
+                return "You can't castle queenside anymore";
+
+            if (!IsEmpty(new Int2(1, y)) || !IsEmpty(new Int2(2, y)) || !IsEmpty(new Int2(3, y)))
+                return "You can't castle through or into other pieces";
+
+            if (InCheck(new Int2(4, y), player) || InCheck(new Int2(3, y), player))
+                return "You can't castle through check";
+        }
+        else if (diff == new Int2(2, 0))
+        {
+            castle = true;
+
+            if ((player == Players.White && !Game.CastleKingWhite) || (player == Players.Black && !Game.CastleKingBlack))
+                return "You can't castle kingside anymore";
+
+            if (!IsEmpty(new Int2(5, y)) || !IsEmpty(new Int2(6, y)))
+                return "You can't castle through or into other pieces";
+
+            if (InCheck(new Int2(4, y), player) || InCheck(new Int2(5, y), player))
+                return "You can't castle through check";
+        }
+        else
+            castle = false;
+
         return null;
     }
 
@@ -196,6 +344,11 @@ public partial class ChessEngine(ChessGame Game)
     {
         Int2 kingPos = FindPiece(player == Players.White ? 'K' : 'k') ?? throw new Exception($"Could not find king of player {player}");
 
+        return InCheck(kingPos, player);
+    }
+
+    private bool InCheck(Int2 pos, Players player)
+    {
         for (int x = 0; x < 8; x++)
         {
             for (int y = 0; y < 8; y++)
@@ -204,7 +357,7 @@ public partial class ChessEngine(ChessGame Game)
                 if (GetPlayer(piece) != OtherPlayer(player))
                     continue;
 
-                if (CheckMove(new Move(new Int2(x, y), kingPos)) == null)
+                if (CheckMove(new Move(new Int2(x, y), pos)) == null)
                     return true;
             }
         }

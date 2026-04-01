@@ -15,12 +15,17 @@ async function start() {
         await createUser();
         localStorage.setItem('userId', userId);
     }
+    document.getElementById('userid').innerText = 'UserId: ' + userId.toUpperCase();
 
     deviceId = localStorage.getItem('deviceId');
     if (deviceId === null) { // create device if needed
         await getDevices();
         deviceId = prompt('How do you want name your device?');
-        await addDevice({id: deviceId, enableBlocking: true})
+        devices.push({
+            device: deviceId,
+            enableBlocking: true
+        });
+        await patchDevices();
         localStorage.setItem('deviceId', deviceId);
     }
 
@@ -94,18 +99,21 @@ function closeInstructions() {
 
 function displayFilters() {
     let html = '';
-    for (let i = 0; i < filters.length; i++) {
-        let filter = filters[i];
 
-        html += `<div clickable onclick="toogleFilter(${i})"><span class="status-circle" ${filter.enableBlocking ? 'active' : ''} filter="${filter.filter}"></span> ${filter.filter} ${filter.enableBlocking ? ' - Active' : ''}</div>`;
-    }
+    Object.keys(filters).forEach(filterId => {
+            html += `<div clickable onclick="toogleFilter('${filterId}')"><span class="status-circle" ${filters[filterId].enableBlocking ? 'active' : ''} filter="${filters[filterId].filter}"></span> ${filters[filterId].description} ${filters[filterId].enableBlocking ? ' - Active' : ''}</div>`;
+    });
 
     document.querySelector('filters').innerHTML = html;
 }
 
-function toogleFilter(i) {
-    filters[i].enableBlocking = !filters[i].enableBlocking;
-    patchFilters();
+function toogleFilter(filterId) {
+    filters[filterId].enableBlocking = !filters[filterId].enableBlocking;
+    if (filters[filterId].enableBlocking) {
+        enableFilter(filterId);
+    } else {
+        disableFilter(filterId);
+    }
 
     displayFilters();
 }

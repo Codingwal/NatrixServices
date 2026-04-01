@@ -12,6 +12,16 @@ public class DataContext(DbContextOptions<DataContext> options) : DataContext<Us
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.Entity<GameData>().ToTable("GameData");
+
+        modelBuilder.Entity<UserData>(b =>
+        {
+            b.OwnsOne(u => u.Stats);
+        });
+        
+        modelBuilder.Entity<GameData>(b =>
+        {
+            b.Property(g => g.Moves).SaveAsJson();
+        });
     }
 
     public async Task<GameData?> GetGameData(GameId gameId)
@@ -46,21 +56,31 @@ public class UserStats
     }
 }
 
-public class GameData(GameId gameId, bool isPublic, int timePerPlayer, string fen)
+public class GameData
 {
     [Key, Required, StringLength(8)]
-    public GameId GameId { get; set; } = gameId;
-    public bool IsPublic { get; set; } = isPublic;
+    public GameId GameId { get; set; } = GameId.Empty;
+    public bool IsPublic { get; set; } = false;
 
     public string? Player1 { get; set; } = null;
     public string? Player2 { get; set; } = null;
-    public int TimeLeft1 { get; set; } = timePerPlayer;
-    public int TimeLeft2 { get; set; } = timePerPlayer;
+    public int TimeLeft1 { get; set; } = -1;
+    public int TimeLeft2 { get; set; } = -1;
 
-    public string Fen { get; set; } = fen;
+    public string Fen { get; set; } = string.Empty;
     public List<MoveDTO> Moves { get; set; } = [];
 
     public char? Result { get; set; } = null;
+
+    public GameData() { }
+    public GameData(GameId gameId, bool isPublic, int timePerPlayer, string fen)
+    {
+        GameId = gameId;
+        IsPublic = isPublic;
+        TimeLeft1 = timePerPlayer;
+        TimeLeft2 = timePerPlayer;
+        Fen = fen;
+    }
 }
 
 public record ChessBoardDTO

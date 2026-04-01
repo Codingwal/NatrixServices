@@ -25,7 +25,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
 
         ChessGame game = new(gameData.Fen);
 
-        return Ok(new ChessBoardDTO() { Board = game.Fields });
+        return Ok(new ChessBoardDTO(game));
     }
 
     [HttpGet("{gameId}/moves")]

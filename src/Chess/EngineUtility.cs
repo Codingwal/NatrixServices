@@ -46,7 +46,7 @@ public partial class ChessEngine
 
 
     /* Player helper methods */
-    private static Players OtherPlayer(Players player)
+    public static Players OtherPlayer(Players player)
     {
         if (player == Players.White)
             return Players.Black;

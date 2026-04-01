@@ -54,6 +54,7 @@ UserData:
 {
     "username": <Username>,
     "title": <string>,
+    "titleDescription": <string>,
     "seasonsWon": <int>,
     "tournamentsWon": <int>
 }

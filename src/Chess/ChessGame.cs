@@ -76,7 +76,7 @@ public partial class ChessGame
         for (int y = 0; y < 8; y++)
             fen += CalcRowFen(y) + '/';
 
-        fen = fen[..^1]; // Remove trailing '/
+        fen = fen[..^1]; // Remove trailing '/'
 
         fen += NextPlayer == Players.White ? " w " : " b ";
 
@@ -121,5 +121,27 @@ public partial class ChessGame
             rowFen += emptyCount;
 
         return rowFen;
+    }
+
+    public void ForEachPiece(Action<char, Int2> action)
+    {
+        for (int y = 0; y < 8; y++)
+            for (int x = 0; x < 8; x++)
+                action(Fields[x, y], new Int2(x, y));
+    }
+    public int CountPieces(char piece, Players player = Players.None)
+    {
+        if (player == Players.White)
+            piece = char.ToUpper(piece);
+        else
+            piece = char.ToLower(piece);
+
+        int count = 0;
+        ForEachPiece((c, _) =>
+        {
+            if (c == piece)
+                count++;
+        });
+        return count;
     }
 }

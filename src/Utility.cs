@@ -1,5 +1,3 @@
-global using UserId = string;
-
 namespace NatrixServices;
 
 public static class Utility

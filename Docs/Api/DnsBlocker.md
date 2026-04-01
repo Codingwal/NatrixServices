@@ -1,12 +1,7 @@
 # DnsBlocker
 ``` api/dnsblocker ```
 
-POST ``` createuser ``` ( Returns UserId ) <br>
-
-\<UserId\>, \<DeviceId\>, \<FilterId\> and \<Domain\> are strings.
-
-\[AdminOnly\]: <br>
-Header: ``` { "password": <AdminPassword> } ```
+\<DeviceId\>, \<FilterId\> and \<Domain\> are strings.
 
 ## DnsBlocker/Config
 ``` api/dnsblocker/config/... ```
@@ -37,6 +32,10 @@ FilterConfig:
     "domainsToBlock": [<Domain>, ...]
 }
 ```
+
+### User api
+GET ``` users/<Username>/blocking-enabled ```
+GET ``` users/<Username>/blocking-enabled ```
 
 
 ### User api
@@ -80,6 +79,6 @@ GET ``` lastrequest/<UserId> ``` ( Returns DnsRequest ) <br>
 GET ``` dnsrequestcount/<UserId> ``` ( Returns Integer ) <br>
 
 ### Global api
-GET ``` global/lastrequest/<UserId> ``` [AdminOnly] ( Returns DnsRequest ) <br>
-GET ``` global/dnsrequestcount/<UserId> ``` [AdminOnly] ( Returns Integer ) <br>
+GET ``` global/lastrequest ``` [AdminOnly] ( Returns DnsRequest ) <br>
+GET ``` global/dnsrequestcount ``` [AdminOnly] ( Returns Integer ) <br>
 

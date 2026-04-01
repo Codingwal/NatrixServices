@@ -1,8 +1,6 @@
 # Chess api
 ``` api/chess/... ```
 
-\[HeaderAuth\]: <br>
-Header: ``` { "username": <string>, "passwordHash": <string> } ```
 
 ## Structures
 
@@ -71,7 +69,7 @@ Move:
 
 
 ## Game api
-GET ``` games/<GameId> ``` ( Returns GameData ) <br>
+GET ` games/<GameId> ` ( Returns GameData ) <br>
 GET ``` games/<GameId>/board ``` ( Returns ChessBoard ) <br>
 GET ``` games/<GameId>/moves ``` ( Returns: ``` { "moves": [<Move>, <Move>, ...] } ``` ) <br>
 GET ``` games/<GameId>/allowed-moves?field=<string?> ``` ( Returns: ``` { "moves": [<Move>, <Move>, ...] } ``` ) <br>
@@ -82,5 +80,5 @@ POST ``` games/<GameId>/moves ``` [HeaderAuth] ( Body: Move) <br>
 
 ## User api
 GET ``` users/<Username> ``` ( Returns UserData ) <br>
-GET ``` users/<Username>/games?onlyPublic=<Bool?> ``` [HeaderAuth (If !onlyPublic)] ( Returns: ``` { "games": [<GameData>, <GameData>, ...] } ``` ) <br>
+GET ``` users/<Username>/games ``` [HeaderAuth] ( Returns: ``` { "games": [<GameData>, <GameData>, ...] } ``` ) <br>
 GET ``` users/<Username>/stats ``` ( Returns UserStats ) <br>

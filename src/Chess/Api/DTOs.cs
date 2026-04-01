@@ -1,50 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices.Chess;
 
-public class DataContext(DbContextOptions<DataContext> options) : DataContext<UserData, GlobalData>(options)
-{
-    public DbSet<GameData> GameData => Set<GameData>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        base.OnModelCreating(modelBuilder);
-
-        modelBuilder.Entity<GameData>().ToTable("GameData");
-
-        modelBuilder.Entity<UserData>(b =>
-        {
-            b.OwnsOne(u => u.Stats);
-        });
-
-        modelBuilder.Entity<GameData>(b =>
-        {
-            b.Property(g => g.Moves).SaveAsJson();
-        });
-    }
-
-    public async Task<GameData?> GetGameData(GameId gameId)
-    {
-        GameData? gameData = await GameData.FindAsync(gameId);
-        return gameData;
-    }
-}
-
-
-public class UserData : UserDataBase
-{
-    public bool TitleHolder { get; set; } = false;
-    public int SeasonsWon { get; set; } = 0;
-    public int TournamentsWon { get; set; } = 0;
-    public UserStats Stats { get; set; } = new();
-}
-public class GlobalData
-{
-
-}
-
-public class UserStats
+public class UserStatsDTO
 {
     public int GamesPlayed { get; set; } = 0;
     public int GamesWon { get; set; } = 0;
@@ -103,7 +61,7 @@ public class UserStats
         return GamesPlayed != 0 ? (double)totalValue / GamesPlayed : 0;
     }
 
-    public void UpdateStats(GameData gameData, Players player)
+    public void UpdateStats(GameDataDTO gameData, Players player)
     {
         ChessGame game = new(gameData.Fen);
 
@@ -147,7 +105,7 @@ public class UserStats
     }
 }
 
-public class GameData
+public class GameDataDTO
 {
     [Key, Required, StringLength(8)]
     public GameId GameId { get; set; } = GameId.Empty;
@@ -166,8 +124,8 @@ public class GameData
 
     public char? Result { get; set; } = null; // optional. 'w' => white won, 'b' => black won, 'd' => draw
 
-    public GameData() { }
-    public GameData(GameId gameId, bool isPublic, int timePerPlayer, string fen)
+    public GameDataDTO() { }
+    public GameDataDTO(GameId gameId, bool isPublic, int timePerPlayer, string fen)
     {
         GameId = gameId;
         IsPublic = isPublic;
@@ -217,7 +175,24 @@ public record MoveDTO
         To = ChessEngine.PosToFieldDesc(move.Destination);
         Promotion = move.Promotion;
     }
+    public Move ToMove()
+    {
+        return new Move(ChessEngine.FieldDescToPos(From), ChessEngine.FieldDescToPos(To), Promotion);
+    }
 }
 
-public record GameListDTO(List<GameData> Games);
-public record MoveListDTO(List<MoveDTO> Moves);
+public record GameListDTO(List<GameDataDTO> Games);
+public record MoveListDTO
+{
+    public List<MoveDTO> Moves = [];
+
+    public MoveListDTO(List<MoveDTO> moves)
+    {
+        Moves = moves;
+    }
+    public MoveListDTO(List<Move> moves)
+    {
+        foreach (var move in moves)
+            Moves.Add(new(move));
+    }
+}

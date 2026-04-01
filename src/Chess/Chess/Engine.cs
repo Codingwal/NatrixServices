@@ -2,10 +2,6 @@ namespace NatrixServices.Chess;
 
 public partial class ChessEngine(ChessGame Game)
 {
-    public string? DoMove(MoveDTO move, out char? result)
-    {
-        return DoMove(new Move(FieldDescToPos(move.From), FieldDescToPos(move.To)), out result);
-    }
     public string? DoMove(Move move, out char? result)
     {
         result = null;
@@ -143,9 +139,9 @@ public partial class ChessEngine(ChessGame Game)
         return null;
     }
 
-    public List<MoveDTO> GetAllowedMoves()
+    public List<Move> GetAllowedMoves()
     {
-        List<MoveDTO> allowedMoves = [];
+        List<Move> allowedMoves = [];
 
         for (int x = 0; x < 8; x++)
         {
@@ -157,13 +153,9 @@ public partial class ChessEngine(ChessGame Game)
 
         return allowedMoves;
     }
-    public List<MoveDTO> GetAllowedMoves(string field)
+    public List<Move> GetAllowedMoves(Int2 pos)
     {
-        return GetAllowedMoves(FieldDescToPos(field));
-    }
-    private List<MoveDTO> GetAllowedMoves(Int2 pos)
-    {
-        List<MoveDTO> allowedMoves = [];
+        List<Move> allowedMoves = [];
 
         for (int x = 0; x < 8; x++)
         {
@@ -171,7 +163,7 @@ public partial class ChessEngine(ChessGame Game)
             {
                 Move move = new(pos, new Int2(x, y));
                 if (CheckMove(move) == null)
-                    allowedMoves.Add(new MoveDTO(move));
+                    allowedMoves.Add(move);
             }
         }
 
@@ -207,16 +199,27 @@ public partial class ChessEngine(ChessGame Game)
         };
         if (error != null) return error;
 
-        return CheckPromotion(move, startPiece);
+        return CheckPromotion(move, startPiece, player);
     }
 
-    private static string? CheckPromotion(Move move, char piece)
+    private static string? CheckPromotion(Move move, char piece, Players player)
     {
-        if (move.Promotion == null)
-            return null;
+        int y = (player == Players.White) ? 7 : 0;
+        bool lastRow = move.Destination.y == y;
+        bool isPawn = char.ToLower(piece) == 'p';
 
-        if (char.ToLower(piece) != 'p')
+        if (move.Promotion == null)
+        {
+            if (lastRow && isPawn)
+                return "You must promote if a pawn reaches the last row";
+            return null;
+        }
+
+        if (!isPawn)
             return "Only pawns can be promoted";
+
+        if (!lastRow)
+            return "You can only promote if the pawn reached the last row";
 
         char newPiece = char.ToLower(move.Promotion.Value);
         if (newPiece != 'q' && newPiece != 'r' && newPiece != 'b' && newPiece != 'n')

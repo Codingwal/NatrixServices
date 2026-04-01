@@ -11,7 +11,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
     [HttpGet("{gameId}")]
     public async Task<IActionResult> GetGameData(GameId gameId)
     {
-        GameData? gameData = await DataContext.GameData.FindAsync(gameId);
+        GameDataDTO? gameData = await DataContext.GameData.FindAsync(gameId);
         if (gameData == null) return NotFound("Game not found");
 
         return Ok(gameData);
@@ -20,7 +20,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
     [HttpGet("{gameId}/board")]
     public async Task<IActionResult> GetBoard(GameId gameId)
     {
-        GameData? gameData = await DataContext.GameData.FindAsync(gameId);
+        GameDataDTO? gameData = await DataContext.GameData.FindAsync(gameId);
         if (gameData == null) return NotFound("Game not found");
 
         ChessGame game = new(gameData.Fen);
@@ -31,7 +31,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
     [HttpGet("{gameId}/moves")]
     public async Task<IActionResult> GetMoves(GameId gameId)
     {
-        GameData? gameData = await DataContext.GameData.FindAsync(gameId);
+        GameDataDTO? gameData = await DataContext.GameData.FindAsync(gameId);
         if (gameData == null) return NotFound("Game not found");
 
         return Ok(new MoveListDTO(gameData.Moves));
@@ -40,15 +40,15 @@ public class GameApi(DataContext DataContext) : ControllerBase
     [HttpGet("{gameId}/allowed-moves")]
     public async Task<IActionResult> GetAllowedMoves(GameId gameId, [FromQuery] string? field)
     {
-        GameData? gameData = await DataContext.GameData.FindAsync(gameId);
+        GameDataDTO? gameData = await DataContext.GameData.FindAsync(gameId);
         if (gameData == null) return NotFound("Game not found");
 
         ChessGame game = new(gameData.Fen);
         ChessEngine engine = new(game);
 
-        List<MoveDTO> allowedMoves;
+        List<Move> allowedMoves;
         if (field != null)
-            allowedMoves = engine.GetAllowedMoves(field);
+            allowedMoves = engine.GetAllowedMoves(ChessEngine.FieldDescToPos(field));
         else
             allowedMoves = engine.GetAllowedMoves();
 
@@ -58,7 +58,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
     [HttpGet("games")]
     public async Task<IActionResult> GetGames([FromQuery] bool onlyActive = true, [FromQuery] string? username = null)
     {
-        List<GameData> games;
+        List<GameDataDTO> games;
 
         if (onlyActive)
             games = await DataContext.GameData.Where(g => g.IsPublic && g.Player1 != null && g.Player2 != null && g.Result == null).ToListAsync();
@@ -75,7 +75,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
     public async Task<IActionResult> CreateGame([FromBody] CreateGameRequest request)
     {
         GameId gameId = Utility.GenerateId();
-        DataContext.GameData.Add(new GameData(gameId, request.IsPublic, request.TimePerPlayer, ChessGame.DefaultFen));
+        DataContext.GameData.Add(new GameDataDTO(gameId, request.IsPublic, request.TimePerPlayer, ChessGame.DefaultFen));
         await DataContext.SaveChangesAsync();
         return Created($"api/chess/games/{gameId}", gameId);
     }
@@ -85,7 +85,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
     [HeaderAuth]
     public async Task<IActionResult> JoinGame(GameId gameId, [FromHeader] string username)
     {
-        GameData? gameData = await DataContext.GetGameData(gameId);
+        GameDataDTO? gameData = await DataContext.GetGameData(gameId);
         if (gameData == null) return NotFound("Game not found");
 
         if (gameData.Player1 == null)
@@ -104,7 +104,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
     [HeaderAuth]
     public async Task<IActionResult> Move(GameId gameId, [FromHeader] string username, [FromBody] MoveDTO move)
     {
-        GameData? gameData = await DataContext.GameData.FindAsync(gameId);
+        GameDataDTO? gameData = await DataContext.GameData.FindAsync(gameId);
         if (gameData == null) return NotFound("Game not found");
 
         if (gameData.Result != null)
@@ -125,7 +125,7 @@ public class GameApi(DataContext DataContext) : ControllerBase
         ChessGame game = new(gameData.Fen);
         ChessEngine engine = new(game);
 
-        string? error = engine.DoMove(move, out char? result);
+        string? error = engine.DoMove(move.ToMove(), out char? result);
 
         if (error != null)
             return BadRequest(error);

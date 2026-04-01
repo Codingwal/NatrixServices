@@ -5,7 +5,7 @@ namespace NatrixServices.Chess;
 
 [ApiController]
 [Route("api/chess/users")]
-public class UserApi(DataContext DataContext, Users.DataContext UserDataContext) : ControllerBase
+public class UserApi(DataContext DataContext) : ControllerBase
 {
     [HttpGet("{username}")]
     public async Task<IActionResult> GetUserData(string username)
@@ -20,13 +20,10 @@ public class UserApi(DataContext DataContext, Users.DataContext UserDataContext)
 
     [HttpGet("{username}/games")]
     [HeaderAuth]
-    public async Task<IActionResult> GetUserGames(string username, [FromQuery] bool onlyPublic = true)
+    public async Task<IActionResult> GetUserGames(string username)
     {
-        if (!onlyPublic && !Auth.AuthenticateUser(HttpContext.Request, UserDataContext))
-            return Unauthorized("You can only view private games if you are authenticated");
-
         List<GameData> games = await DataContext.GameData
-            .Where(g => (!onlyPublic || g.IsPublic) && (g.Player1 == username || g.Player2 == username)).ToListAsync();
+            .Where(g => g.Player1 == username || g.Player2 == username).ToListAsync();
 
         return Ok(new GameListDTO(games));
     }

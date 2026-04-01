@@ -2,12 +2,14 @@ namespace NatrixServices.Chess;
 
 public partial class ChessEngine(ChessGame Game)
 {
-    public string? DoMove(MoveDTO move)
+    public string? DoMove(MoveDTO move, out char? result)
     {
-        return DoMove(new Move(FieldDescToPos(move.From), FieldDescToPos(move.To)));
+        return DoMove(new Move(FieldDescToPos(move.From), FieldDescToPos(move.To)), out result);
     }
-    public string? DoMove(Move move)
+    public string? DoMove(Move move, out char? result)
     {
+        result = null;
+
         // Check if the move is valid
         string? error = CheckMove(move);
         if (error != null) return error;
@@ -71,9 +73,22 @@ public partial class ChessEngine(ChessGame Game)
         else
             Game.HalfMovesSinceAction++;
 
+        // Handle fifty-move rule
+        if (Game.HalfMovesSinceAction >= 100)
+            result = 'd';
+
         // MoveCount starts at 1 and is incremented after Black's move
         if (player == Players.Black)
             Game.MoveCount++;
+
+        // Handle checkmate and draw because of no moves
+        if (GetAllowedMoves().Count == 0)
+        {
+            if (InCheck(Game.NextPlayer))
+                result = (Game.NextPlayer == Players.White) ? 'b' : 'w';
+            else
+                result = 'd';
+        }
 
         return null;
     }

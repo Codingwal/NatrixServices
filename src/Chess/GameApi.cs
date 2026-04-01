@@ -107,20 +107,50 @@ public class GameApi(DataContext DataContext) : ControllerBase
         GameData? gameData = await DataContext.GameData.FindAsync(gameId);
         if (gameData == null) return NotFound("Game not found");
 
-        if (gameData.Player1 != username && gameData.Player2 != username)
-            return Unauthorized("You are not a participant of this game");
+        if (gameData.Result != null)
+            return BadRequest("Game is already finished");
 
         if (gameData.Player1 == null || gameData.Player2 == null)
             return BadRequest("Still waiting for players");
 
+        int playerIndex = -1;
+        if (gameData.Player1 == username)
+            playerIndex = 1;
+        else if (gameData.Player2 == username)
+            playerIndex = 2;
+
+        if (playerIndex == -1)
+            return Unauthorized("You are not a participant of this game");
+
         ChessGame game = new(gameData.Fen);
         ChessEngine engine = new(game);
 
-        string? error = engine.DoMove(move);
+        string? error = engine.DoMove(move, out char? result);
 
         if (error != null)
             return BadRequest(error);
 
+        // Handle time
+        if (gameData.LastMoveTime != default)
+        {
+            TimeSpan timeElapsed = DateTimeOffset.UtcNow - gameData.LastMoveTime;
+            if (playerIndex == 1)
+            {
+                gameData.TimeLeft1 -= timeElapsed;
+                if (gameData.TimeLeft1 <= TimeSpan.Zero)
+                    gameData.Result = 'b'; // Player 1 loses
+            }
+            else
+            {
+                gameData.TimeLeft2 -= timeElapsed;
+                if (gameData.TimeLeft2 <= TimeSpan.Zero)
+                    gameData.Result = 'w'; // Player 2 loses
+            }
+        }
+
+        // Update game data
+        gameData.Result = result;
+        gameData.LastMoveTime = DateTimeOffset.UtcNow;
         gameData.Moves.Add(move);
         gameData.Fen = game.ToFen();
         await DataContext.SaveChangesAsync();

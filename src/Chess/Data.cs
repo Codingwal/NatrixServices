@@ -17,7 +17,7 @@ public class DataContext(DbContextOptions<DataContext> options) : DataContext<Us
         {
             b.OwnsOne(u => u.Stats);
         });
-        
+
         modelBuilder.Entity<GameData>(b =>
         {
             b.Property(g => g.Moves).SaveAsJson();
@@ -64,21 +64,23 @@ public class GameData
 
     public string? Player1 { get; set; } = null;
     public string? Player2 { get; set; } = null;
-    public int TimeLeft1 { get; set; } = -1;
-    public int TimeLeft2 { get; set; } = -1;
+
+    public TimeSpan TimeLeft1 { get; set; }
+    public TimeSpan TimeLeft2 { get; set; }
+    public DateTimeOffset LastMoveTime { get; set; } = default;
 
     public string Fen { get; set; } = string.Empty;
     public List<MoveDTO> Moves { get; set; } = [];
 
-    public char? Result { get; set; } = null;
+    public char? Result { get; set; } = null; // optional. 'w' => white won, 'b' => black won, 'd' => draw
 
     public GameData() { }
     public GameData(GameId gameId, bool isPublic, int timePerPlayer, string fen)
     {
         GameId = gameId;
         IsPublic = isPublic;
-        TimeLeft1 = timePerPlayer;
-        TimeLeft2 = timePerPlayer;
+        TimeLeft1 = TimeSpan.FromMinutes(timePerPlayer);
+        TimeLeft2 = TimeSpan.FromMinutes(timePerPlayer);
         Fen = fen;
     }
 }

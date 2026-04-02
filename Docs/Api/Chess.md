@@ -1,6 +1,6 @@
-# Chess api
-``` api/chess/... ```
+# Chess API
 
+``` api/chess/... `
 
 ## Structures
 
@@ -68,17 +68,33 @@ Move:
 ```
 
 
-## Game api
-GET ` games/<GameId> ` ( Returns GameData ) <br>
-GET ``` games/<GameId>/board ``` ( Returns ChessBoard ) <br>
-GET ``` games/<GameId>/moves ``` ( Returns: ``` { "moves": [<Move>, <Move>, ...] } ``` ) <br>
-GET ``` games/<GameId>/allowed-moves?field=<string?> ``` ( Returns: ``` { "moves": [<Move>, <Move>, ...] } ``` ) <br>
-GET ``` games?onlyActive=<Bool?>&username=<string?> ``` ( Returns: ``` { "games": [<GameData>, <GameData>, ...] } ``` ) <br>
-POST ``` games ``` ( Body: ``` { "isPublic": <Bool>, "timePerPlayer": <int> } ```) <br>
-POST ``` games/<GameId>/players ``` [HeaderAuth] <br>
-POST ``` games/<GameId>/moves ``` [HeaderAuth] ( Body: Move) <br>
+## Game API
 
-## User api
-GET ``` users/<Username> ``` ( Returns UserData ) <br>
-GET ``` users/<Username>/games ``` [HeaderAuth] ( Returns: ``` { "games": [<GameData>, <GameData>, ...] } ``` ) <br>
-GET ``` users/<Username>/stats ``` ( Returns UserStats ) <br>
+* GET `games/<GameId>`
+    * Returns: `<GameData>`
+* GET `games/<GameId>/board`
+    * Returns: `<ChessBoard>`
+* GET `games/<GameId>/moves`
+    * Returns: `{ "moves": [<Move>, <Move>, ...] }`
+* GET `games/<GameId>/allowed-moves?field=<string?>`
+    * Returns: `{ "moves": [<Move>, <Move>, ...] }`
+* GET `games?onlyActive=<Bool?>&username=<string?>`
+    * Returns: `{ "games": [<GameData>, <GameData>, ...] }`
+* POST `games`
+    * Body: `{ "isPublic": <Bool>, "timePerPlayer": <int> }`
+* POST `games/<GameId>/players`
+    * **Header Auth**
+* POST `games/<GameId>/moves`
+    * **Header Auth**
+    * Body: `<Move>`
+
+---
+
+## User API
+* GET `users/<Username>`
+    * Returns: `<UserData>`
+* GET `users/<Username>/games`
+    * **Header Auth**
+    * Returns: `{ "games": [<GameData>, <GameData>, ...] }`
+* GET `users/<Username>/stats`
+    * Returns: `<UserStats>`

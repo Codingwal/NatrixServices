@@ -1,16 +1,15 @@
 # Chess api
 ``` api/users/... ```
 
-\[HeaderAuth\]: <br>
-Header: ``` { "username": <string>, "passwordHash": <string> } ```
+**HeaderAuth**: <br>
+Header: `{ "username": <string>, "passwordHash": <string> }`
 
-\[AdminOnly\]: <br>
-Header: ``` { "adminPassword": <string> } ```
-
-## Structures
-
+**AdminOnly**: <br>
+Header: `{ "adminPassword": <string> }`
 
 
 ## Api
 
-POST (Body: ``` { "username": <string>, "passwordHash": <string> } ```) <br>
+* POST 
+    * **Admin Only**
+    * Body: `{ "username": <string>, "passwordHash": <string> }`

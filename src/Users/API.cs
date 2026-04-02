@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using NatrixServices.Users;
+
+namespace NatrixServices.Users;
 
 [ApiController]
 [Route("api/users")]
 public class Api(DataContext DataContext) : ControllerBase
 {
     [HttpPost]
+    [AdminOnly]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         UserData userData = new() { Username = request.Username, PasswordHash = request.PasswordHash };

@@ -1,12 +1,10 @@
-# DnsBlocker
-``` api/dnsblocker ```
+# Dns Blocker API
+
+`api/dnsblocker/...`
+
+## Structures
 
 \<DeviceId\>, \<FilterId\> and \<Domain\> are strings.
-
-## DnsBlocker/Config
-``` api/dnsblocker/config/... ```
-
-### Structures
 
 DeviceConfig:
 ```
@@ -33,52 +31,99 @@ FilterConfig:
 }
 ```
 
-### User api
-GET ``` users/<Username>/blocking-enabled ```
-GET ``` users/<Username>/blocking-enabled ```
-
-
-### User api
-GET ``` blockingenabled/<UserId>?deviceId=<DeviceId>&filterId=<FilterId> ``` ( Returns Bool ) <br> 
-PATCH ``` blockingenabled/<UserId>?enabled=<Bool>&deviceId=<DeviceId?>&filterId=<FilterId> ```<br>
-GET ``` devices/<UserId> ``` ( Returns: ``` {<DeviceId>: <DeviceConfig>, ...} ``` ) <br>
-PATCH ``` devices/add/<UserId> ``` ( Body: ``` { "device": <DeviceConfig>} ``` ) <br>
-PATCH ``` devices/remove/<UserId>?deviceId=<DeviceId> ``` <br>
-GET ``` filters/<UserId> ``` ( Returns: ``` {<FilterId>: <FilterReference>, ...} ``` ) <br>
-PATCH ``` filters/add/<UserId> ``` ( Body: ``` { "filter": <FilterReference>} ``` ) <br>
-PATCH ``` filters/remove/<UserId>?filterId=<FilterId> ``` <br>
-
-### Global api
-GET ``` global/blockingenabled ``` ( Returns Bool ) <br>
-PATCH ``` global/blockingenabled?enabled=<Bool> ``` [AdminOnly] <br>
-GET ``` global/dnsenabled ``` ( Returns Bool ) <br>
-PATCH ``` global/dnsenabled?enabled=<Bool> ``` [AdminOnly] <br>
-GET ``` global/filters ``` ( Returns: ``` {<FilterId>: <FilterConfig>, ...} ``` ) <br>
-PATCH ``` global/filters/add ```[AdminOnly] ( Body: ``` { "filter": <FilterConfig> } ``` ) <br>
-PATCH ``` global/filters/remove?filterId=<FilterId> ``` [AdminOnly] <br>
-
-
-## DnsBlocker/Data
-``` api/dnsblocker/data/... ```
-
-### Structures
-
 DnsRequest:
 ```
 {
     "time": <TimeStamp>,
     "domain": <Domain>,
     "blocked": <Bool>,
-    "userId": <UserId>,
+    "username": <Username>,
     "deviceId": <DeviceId>
 }
 ```
 
-### User api
-GET ``` lastrequest/<UserId> ``` ( Returns DnsRequest ) <br>
-GET ``` dnsrequestcount/<UserId> ``` ( Returns Integer ) <br>
+## User API
 
-### Global api
-GET ``` global/lastrequest ``` [AdminOnly] ( Returns DnsRequest ) <br>
-GET ``` global/dnsrequestcount ``` [AdminOnly] ( Returns Integer ) <br>
+#### User data
+* GET `users/<Username>/requests/last`
+    * **Header Auth**
+    * Returns: `<DnsRequest>`
+* GET `users/<Username>/requests/count`
+    * **Header Auth**
+    * Returns: `<int>`
 
+#### User Blocking Management
+* GET `users/<Username>/blocking-enabled`
+    * **Header Auth**
+    * Returns: `<Bool>`
+* PUT `users/<Username>/blocking-enabled`
+    * **Header Auth**
+    * Body: `{ "enabled": <Bool> }`
+
+#### Device Blocking Management
+* GET `users/<Username>/devices/{deviceId}/blocking-enabled`
+    * **Header Auth**
+    * Returns: `<Bool>`
+* PUT `users/<Username>/devices/{deviceId}/blocking-enabled`
+    * **Header Auth**
+    * Body: `{ "enabled": <Bool> }`
+
+#### Filter Blocking Management
+* GET `users/<Username>/filters/{filterId}/blocking-enabled`
+    * **Header Auth**
+    * Returns: `<Bool>`
+* PUT `users/<Username>/filters/{filterId}/blocking-enabled`
+    * **Header Auth**
+    * Body: `{ "enabled": <Bool> }`
+
+#### Device Management
+* GET `users/<Username>/devices`
+    * **Header Auth**
+    * Returns: `{ <DeviceId>: <DeviceConfig>, ... }`
+* POST `users/<Username>/devices`
+    * **Header Auth**
+    * Body: `{ "device": <DeviceConfig> }`
+* DELETE `users/<Username>/devices/{deviceId}`
+
+#### Filter Management
+* GET `users/<Username>/filters`
+    * **Header Auth**
+    * Returns: `{ <FilterId>: <FilterReference>, ... }`
+* POST `users/<Username>/filters`
+    * **Header Auth**
+    * Body: `{ "filter": <FilterReference> }`
+* DELETE `users/<Username>/filters/{filterId}`
+    * **Header Auth**
+
+---
+
+## Global API
+
+#### Global data
+* GET `global/requests/last`
+    * **Admin Only**
+    * Returns: `<DnsRequest>`
+* GET `global/requests/count`
+    * **Admin Only**
+    * Returns: `<int>`
+
+#### System Configuration
+* GET `global/config/blocking-enabled`
+    * Returns: `<Bool>`
+* PATCH `global/config/blocking-enabled`
+    * **Admin Only**
+    * Body: `{ "enabled": <Bool> }`
+* GET `global/config/dns-enabled`
+    * Returns: `<Bool>`
+* PATCH `global/config/dns-enabled`
+    * **Admin Only**
+    * Body: `{ "enabled": <Bool> }`
+
+#### Global Filter Definitions
+* GET `global/filters`
+    * Returns: `{ <FilterId>: <FilterConfig>, ... }`
+* POST `global/filters`
+    * **Admin Only**
+    * Body: `{ "filter": <FilterConfig> }`
+* DELETE `global/filters/{filterId}`
+    * **Admin Only**

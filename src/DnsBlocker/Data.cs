@@ -1,3 +1,6 @@
+global using DeviceId = string;
+global using FilterId = string;
+
 using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices.DnsBlocker;
@@ -12,32 +15,37 @@ public class DataContext(DbContextOptions<DataContext> options) : DataContext<Us
         modelBuilder.Entity<UserData>(b =>
         {
             b.OwnsOne(u => u.LastRequest);
+            b.Property(u => u.Devices).SaveAsJson();
+            b.Property(u => u.Filters).SaveAsJson();
         });
 
         modelBuilder.Entity<GlobalData>(b =>
         {
             b.OwnsOne(u => u.LastRequest);
+            b.Property(u => u.Filters).SaveAsJson();
         });
     }
 }
 
-public class UserData : UserDataBase
+public interface IBlockingConfig
 {
-    public int DnsRequestCount { get; set; } = 0;
-    public DnsRequest LastRequest { get; set; } = new();
+    public bool EnableBlocking { get; set; }
 }
 
-public class GlobalData
+public class UserData : UserDataBase, IBlockingConfig
 {
     public int DnsRequestCount { get; set; } = 0;
-    public DnsRequest LastRequest { get; set; } = new();
+    public DnsRequestDTO LastRequest { get; set; } = new();
+    public bool EnableBlocking { get; set; } = false;
+    public Dictionary<DeviceId, DeviceConfigDTO> Devices { get; set; } = [];
+    public Dictionary<FilterId, FilterReferenceDTO> Filters { get; set; } = [];
 }
 
-public record DnsRequest
+public class GlobalData : IBlockingConfig
 {
-    public DateTimeOffset Time { get; set; } = default;
-    public string Domain { get; set; } = string.Empty;
-    public bool Blocked { get; set; } = false;
-    public UserId? UserId { get; set; } = null;
-    public DeviceId? DeviceId { get; set; } = null;
+    public int DnsRequestCount { get; set; } = 0;
+    public DnsRequestDTO LastRequest { get; set; } = new();
+    public bool EnableBlocking { get; set; } = true;
+    public bool EnableDnsServer { get; set; } = true;
+    public Dictionary<FilterId, FilterConfigDTO> Filters = [];
 }

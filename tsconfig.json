@@ -1,0 +1,13 @@
+{
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "node"
+    ,
+    "rootDir": "./typescript",
+    "outDir": "./wwwroot/dist",
+
+    "strict": true
+  }
+}

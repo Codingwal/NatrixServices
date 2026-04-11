@@ -1,130 +1,143 @@
+/* variables */
 :root {
-    --bg-active: linear-gradient(125deg, limegreen, greenyellow);
-    --bg-inactive: linear-gradient(125deg, orangered, orange);
-    --bg-unknown: linear-gradient(125deg, grey, lightgray);
-
-    --active: limegreen;
-    --inactive: orangered;
-    --unknown: darkgrey;
-    --alwaysactive: purple;
+    --item-height: 6vh;
+    --item-width: 25vw;
+    --item-count: 5;
+    --item-margin: 1.5vh;
 }
 
-html,
 body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-unknown);
-
+    /* center items and arrange them vertically */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
 }
 
-* {
-    font-family: monospace;
-    color: black;
-}
-
-body>div {
-    box-sizing: border-box;
-    padding: 20px;
-    max-height: calc(100% - 10px);
-    overflow: auto;
-    margin: 5px;
-    width: 600px;
-    max-width: calc(100% - 10px);
-}
-
-#status-text {
-    font-size: 16px;
-    text-align: center;
-}
-
-#toogle-btn {
-    width: 200px;
-    height: 200px;
-    border-radius: 100%;
+button {
     border: none;
-    margin-left: 50%;
-    margin-right: -100%;
-    translate: -50%;
-
-    font-size: 24px;
-    color: white;
-
-    background: var(--unknown);
-
     cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
-@keyframes click {
-    0% {
-        scale: 1;
-    }
-
-    50% {
-        scale: 0.9;
-    }
-
-    100% {
-        scale: 1;
-    }
+.circle {
+    border-radius: 50%;
+    aspect-ratio: 1;
 }
 
-.status-circle {
-    width: 12px;
-    height: 12px;
-    border-radius: 100%;
-    display: inline-block;
-    background-color: var(--unknown);
-
-    margin-bottom: -1.5px;
+#globalEnabled {
+    padding: 3vh;
+    font-size: 5vh;
+    font-weight: bold;
 }
 
-[alwaysactive] {
-    background-color: var(--alwaysactive);
+.off {
+    background-color: red;
 }
 
-[active] {
-    background-color: var(--active);
+.on {
+    background-color: greenyellow;
 }
 
-[inactive] {
-    background-color: var(--inactive);
+#listContainer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
 }
 
-[clickable] {
-    cursor: pointer;
-    user-select: none;
+.list {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 2vh;
+    margin: 5vw;
+
+    /* don't show more than --item-count elements at once, the rest show if the user scrolls */
+    height: calc((var(--item-height) + var(--item-margin)) * var(--item-count) + 2 * var(--item-margin));
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
-div {
-    background: #ffffff80;
-    border-radius: 10px;
-    margin-top: 10px;
-    padding: 10px;
+.listElement {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+
+    background-color: rgba(0, 0, 0, 0.3);
+
+    height: var(--item-height);
+    margin: var(--item-margin);
+
+    width: var(--item-width);
+    padding: 0 3%;
+    box-sizing: border-box;
+
+    border-radius: 1vh;
 }
 
-p {
-    font-size: 12px;
+button.element {
+    height: calc(var(--item-height) * 0.8);
+    font-size: calc(var(--item-height) * 0.25);
 }
 
-@media (prefers-color-scheme: dark) {
-    * {
-        color: white;
-    }
-
-    div {
-        background: #00000080;
-    }
+button.listElement {
+    font-size: calc(var(--item-height) * 0.6);
+    justify-content: center;
 }
 
-#userid {
+.deleteButton {
+    -webkit-mask-image: url('assets/trash.svg');
+    mask-image: url('assets/trash.svg');
+
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.listElement>div {
+    display: flex;
+    align-items: center;
+
+    /* Space between the two buttons */
+    gap: 0.7vw;
+}
+
+#loginPopup {
+    /* Render on top of the rest */
     position: absolute;
-    right: 10px;
-    bottom: 10px;
-    width: fit-content;
-    font-size: 12px;
+
+    background-color: rgb(100, 100, 100);
+
+    height: 50vh;
+    width: 30vw;
+    border-radius: 4vh;
+    padding: 3vh 3vh;
+
+    font-size: 4vh;
+
+    /* center items and arrange them vertically */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#loginInputFields {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5vh
+}
+
+input {
+    border-radius: 5px;
+    height: 40px;
+    width: 250px;
+    font-size: large;
+}
+
+#loginButtons>button {
+    font-size: 2vh;
+    height: 3em;
+    width: 10em;
+    margin: 1em;
+    border-radius: 1em;
 }

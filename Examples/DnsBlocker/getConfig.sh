@@ -1,1 +1,0 @@
-curl -i http://dnsblocker.ydns.eu:5000/api/dnsblocker/config/ipad

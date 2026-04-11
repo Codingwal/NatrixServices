@@ -20,7 +20,7 @@ export class ListController {
     }
     async removeItem(id) {
         await this.api.removeItem(id);
-        this.items = this.items.filter((item) => item[this.idKey] === id);
+        this.items = this.items.filter((item) => item[this.idKey] !== id);
         this.render();
     }
     render() {

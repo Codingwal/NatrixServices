@@ -7,3 +7,7 @@ export interface FilterReference {
     id: string;
     enableBlocking: boolean;
 }
+
+export interface BlockingState {
+    enabled: boolean
+}

@@ -5,25 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dns Blocker</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="login.css">
 </head>
 
 <body>
-    <div id="main">
-        <h1>Dns Blocker</h1>
-        <br>
-        <button id="globalEnabled" class="bigButton circle off">OFF</button>
-
-    </div>
-
-    <div id="listContainer">
-        <div class="list">
-            <div id="deviceList"></div>
-            <button id="deviceList-add" class="listElement">+</button>
-        </div>
-        <div id="filterList" class="list"></div>
-    </div>
-
     <div id="loginPopup">
         <h2>Login / Register</h2>
         <div id="loginInputFields">
@@ -34,9 +19,11 @@
             <button id="register">Register</button>
             <button id="login">Login</button>
         </div>
+
+        <div id="errorText"></div>
     </div>
 
-    <script type="module" src="dist/DnsBlocker.js"></script>
+    <script type="module" src="dist/Login.js"></script>
 </body>
 
 </html>

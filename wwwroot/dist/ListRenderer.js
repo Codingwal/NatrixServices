@@ -7,8 +7,7 @@ export class ListRenderer {
         this.options.container.addEventListener("click", (e) => this.onButtonPressed(e));
     }
     render(items) {
-        if (items)
-            this.items = items;
+        this.items = items;
         this.options.container.innerHTML = this.items.map((item, index) => listElementTemplate(index, this.options.template(item))).join("");
     }
     onButtonPressed(event) {

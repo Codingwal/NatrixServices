@@ -11,5 +11,7 @@ Header: `{ "adminPassword": <string> }`
 ## Api
 
 * POST 
-    * **Admin Only**
     * Body: `{ "username": <string>, "passwordHash": <string> }`
+
+* GET `{username}`
+    * **Header Auth**

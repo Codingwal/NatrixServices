@@ -1,70 +1,115 @@
 import { ListRenderer } from "./ListRenderer.js"
-import { DeviceConfig, FilterReference } from "./Data.js";
+import { BlockingState, DeviceConfig, FilterReference } from "./Data.js";
 import { deviceConfigTemplate, filterReferenceTemplate } from "./Templates.js";
 import { ListController } from "./ListController.js";
-import { ListAPI } from "./API.js";
+import { API, ListAPI } from "./Utility/API.js";
+import { hash } from "./Utility/Hash.js";
 
-const baseUrl = "/api/dnsblocker/";
+const username = sessionStorage.getItem("username")!;
+const password = sessionStorage.getItem("password")!;
+const passwordHash = await hash(password);
+const authHeader = new Headers({ "username": username, "passwordHash": passwordHash })
 
-main();
+const userBaseUrl = `/api/dnsblocker/users/${username}/`;
 
-async function hash(str: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const buffer = await window.crypto.subtle.digest("SHA-256", encoder.encode(str));
-    return buffer2hexStr(buffer);
-}
+const addDeviceButton = document.getElementById("deviceList-add")!;
+const deviceCreationPopup = document.getElementById("deviceCreationPopup")!;
+const createDeviceButton = document.getElementById("createDevice")!;
+const cancelDeviceCreationButton = document.getElementById("cancelDeviceCreation")!;
+const deviceNameField = document.getElementById("deviceName") as HTMLInputElement;
+const refreshButton = document.getElementById("refresh")!;
+const globalEnabledButton = document.getElementById("globalEnabled")!;
 
-function buffer2hexStr(buffer: ArrayBuffer): string {
-    return [...new Uint8Array(buffer)]
-        .map(x => x.toString(16).padStart(2, "0"))
-        .join("");
-}
+// Refresh data
+refreshButton.addEventListener("click", async () => {
+    deviceController.update();
+    filterController.update();
+    globalEnabled = await getGlobalEnabled();
+    updateGlobalEnabledButton();
+});
 
-async function main() {
-    const username = "user1";
-    const password = "secret";
+// Hide popup
+deviceCreationPopup.style.visibility = "hidden";
 
-    const passwordHash = await hash(password);
+// Open popup
+addDeviceButton.addEventListener("click", () => {
+    deviceCreationPopup.style.visibility = "visible";
+    deviceNameField.value = ""
+});
 
-    const authHeader = new Headers({ "username": username, "passwordHash": passwordHash })
+// Create device
+createDeviceButton.addEventListener("click", () => {
+    if (deviceNameField.value === "") return;
+    deviceController.addItem({ id: deviceNameField.value, enableBlocking: true });
+    deviceCreationPopup.style.visibility = "hidden";
+});
 
-    const deviceRenderer = new ListRenderer<DeviceConfig>({
+// Close popup (cancel creation)
+cancelDeviceCreationButton.addEventListener("click", () => deviceCreationPopup.style.visibility = "hidden")
+
+// Toggle global enabled
+let globalEnabled = await getGlobalEnabled();
+updateGlobalEnabledButton();
+globalEnabledButton.addEventListener("click", async () => {
+    globalEnabled = !globalEnabled;
+    await setGlobalEnabled(globalEnabled);
+    updateGlobalEnabledButton();
+});
+
+
+const deviceController = new ListController<DeviceConfig>(
+    new ListRenderer<DeviceConfig>({
         container: document.getElementById("deviceList")!,
         template: deviceConfigTemplate,
-        buttonHandler: (item, index, action) => {
-            if (action === "enable") {
-                item.enableBlocking = !item.enableBlocking;
-                deviceRenderer.render();
-            }
-            else if (action === "delete")
-                deviceController.removeItem(item.id);
-        }
-    });
+        buttonHandler: handleDeviceButton
+    }),
+    new ListAPI<DeviceConfig>(`${userBaseUrl}devices`, authHeader),
+    "id"
+);
 
-    const deviceController = new ListController<DeviceConfig>(
-        deviceRenderer,
-        new ListAPI<DeviceConfig>(`${baseUrl}users/${username}/devices`, authHeader),
-        "id"
-    );
-
-    deviceController.addItem({ id: "ipad", enableBlocking: true })
-    deviceController.addItem({ id: "pc", enableBlocking: false })
-    deviceController.addItem({ id: "mobile", enableBlocking: true })
-
-
-    const filterRenderer = new ListRenderer<DeviceConfig>({
+const filterController = new ListController<FilterReference>(
+    new ListRenderer<FilterReference>({
         container: document.getElementById("filterList")!,
         template: filterReferenceTemplate,
-        buttonHandler: (item, index, action) => { }
-    });
+        buttonHandler: handleFilterButton
+    }),
+    new ListAPI<FilterReference>(`${userBaseUrl}filters`, authHeader),
+    "id"
+);
 
-    let filters: FilterReference[] = [];
-    filters.push({ id: "filter1", enableBlocking: true });
-    filters.push({ id: "filter2", enableBlocking: false });
-    filters.push({ id: "filter3", enableBlocking: true });
-    filters.push({ id: "filter4", enableBlocking: false });
-    filters.push({ id: "filter5", enableBlocking: true });
-    filters.push({ id: "filter6", enableBlocking: false });
-    filters.push({ id: "filter7", enableBlocking: true });
-    filterRenderer.render(filters);
+async function handleDeviceButton(item: DeviceConfig, index: number, action: string): Promise<void> {
+    if (action === "enable") {
+        item.enableBlocking = !item.enableBlocking;
+        const newState: Partial<BlockingState> = { enabled: item.enableBlocking };
+        await deviceController.api.setProperty(item.id, "blocking-state", newState);
+        deviceController.render();
+    }
+    else if (action === "delete")
+        await deviceController.removeItem(item.id);
+}
+
+async function handleFilterButton(item: FilterReference, index: number, action: string): Promise<void> {
+    if (action === "enable") {
+        item.enableBlocking = !item.enableBlocking;
+        const newState: Partial<BlockingState> = { enabled: item.enableBlocking };
+        await filterController.api.setProperty(item.id, "blocking-state", newState);
+        filterController.render();
+    }
+}
+
+async function getGlobalEnabled(): Promise<boolean> {
+    return true;
+    // const state = await API.get<BlockingState>(`${userBaseUrl}blocking-state`, authHeader);
+    // return state.enabled;
+}
+
+async function setGlobalEnabled(value: boolean): Promise<void> {
+    // const state: BlockingState = { enabled: value };
+    // await API.put(`${userBaseUrl}blocking-state`, authHeader, state);
+}
+
+function updateGlobalEnabledButton(): void {
+    globalEnabledButton.classList.remove("on", "off");
+    globalEnabledButton.classList.add(globalEnabled ? "on" : "off");
+    globalEnabledButton.innerText = globalEnabled ? "ON" : "OFF";
 }

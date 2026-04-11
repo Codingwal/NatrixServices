@@ -42,6 +42,13 @@ DnsRequest:
 }
 ```
 
+BlockingState:
+```
+{
+    "enabled": <Bool>
+}
+```
+
 ## User API
 
 #### User data
@@ -53,28 +60,28 @@ DnsRequest:
     * Returns: `<int>`
 
 #### User Blocking Management
-* GET `users/<Username>/blocking-enabled`
+* GET `users/<Username>/blocking-state`
     * **Header Auth**
-    * Returns: `<Bool>`
-* PUT `users/<Username>/blocking-enabled`
+    * Returns: BlockingState
+* PUT `users/<Username>/blocking-state`
     * **Header Auth**
-    * Body: `{ "enabled": <Bool> }`
+    * Body: BlockingState
 
 #### Device Blocking Management
-* GET `users/<Username>/devices/{deviceId}/blocking-enabled`
+* GET `users/<Username>/devices/{deviceId}/blocking-state`
     * **Header Auth**
-    * Returns: `<Bool>`
-* PUT `users/<Username>/devices/{deviceId}/blocking-enabled`
+    * Returns: BlockingState
+* PUT `users/<Username>/devices/{deviceId}/blocking-state`
     * **Header Auth**
-    * Body: `{ "enabled": <Bool> }`
+    * Body: BlockingState
 
 #### Filter Blocking Management
-* GET `users/<Username>/filters/{filterId}/blocking-enabled`
+* GET `users/<Username>/filters/{filterId}/blocking-state`
     * **Header Auth**
-    * Returns: `<Bool>`
-* PUT `users/<Username>/filters/{filterId}/blocking-enabled`
+    * Returns: BlockingState
+* PUT `users/<Username>/filters/{filterId}/blocking-state`
     * **Header Auth**
-    * Body: `{ "enabled": <Bool> }`
+    * Body: BlockingState
 
 #### Device Management
 * GET `users/<Username>/devices`

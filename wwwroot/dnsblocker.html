@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dns Blocker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="main">
+        <h1>Dns Blocker</h1>
+        <br>
+        <button id="globalEnabled" class="bigButton circle off">OFF</button>
+
+    </div>
+
+    <div id="listContainer">
+        <div class="list">
+            <div id="deviceList"></div>
+            <button id="deviceList-add" class="listElement">+</button>
+        </div>
+        <div id="filterList" class="list"></div>
+    </div>
+
+    <div>
+        <button id="refresh"></button>
+    </div>
+
+    <div id="deviceCreationPopup" class="popup">
+        <h2>Configure your device</h2>
+        <input type="text" id="deviceName" name="deviceName" placeholder="Name">
+        <button id="createDevice" class="popupButton">Create</button>
+        <button id="cancelDeviceCreation" class="popupCancelButton">X</button>
+    </div>
+
+    <script type="module" src="dist/DnsBlocker.js"></script>
+</body>
+
+</html>

@@ -1,13 +1,13 @@
-import { ListAPI } from "./API";
+import { ListAPI } from "./Utility/API";
 import { ListRenderer } from "./ListRenderer";
-import { FilteredKeysOf } from "./Utillity";
+import { FilteredKeysOf } from "./Utility/Utillity";
 
 export class ListController<T> {
     private items: T[] = [];
 
     public constructor(
         private renderer: ListRenderer<T>,
-        private api: ListAPI<T>,
+        public api: ListAPI<T>,
         private idKey: FilteredKeysOf<T, string>
     ) { }
 
@@ -25,11 +25,11 @@ export class ListController<T> {
 
     public async removeItem(id: string): Promise<void> {
         await this.api.removeItem(id);
-        this.items = this.items.filter((item) => item[this.idKey] === id);
+        this.items = this.items.filter((item) => item[this.idKey] !== id);
         this.render();
     }
 
-    private render(): void {
+    public render(): void {
         this.renderer.render(this.items);
     }
 }

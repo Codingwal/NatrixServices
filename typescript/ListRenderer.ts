@@ -15,9 +15,8 @@ export class ListRenderer<T> {
         this.options.container.addEventListener("click", (e) => this.onButtonPressed(e));
     }
 
-    public render(items?: T[]) {
-        if (items)
-            this.items = items;
+    public render(items: T[]) {
+        this.items = items;
 
         this.options.container.innerHTML = this.items.map(
             (item: T, index: number) => listElementTemplate(index, this.options.template(item))

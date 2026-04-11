@@ -1,3 +1,14 @@
+export class APIError extends Error {
+    public constructor(
+        public statusCode: number,
+        public serverMessage: string
+    ) {
+        super(`Fetch error: ${statusCode.toString()} (\"${serverMessage}\")`);
+        this.name = "API Error";
+
+        Object.setPrototypeOf(this, APIError.prototype);
+    }
+}
 
 export class API {
     public static async get<TReturn>(url: string, headers: Headers, urlParams = new URLSearchParams()): Promise<TReturn> {
@@ -36,8 +47,17 @@ export class API {
             body: body ? JSON.stringify(body) : undefined
         });
 
-        if (!response.ok)
-            throw new Error("Fetch error: " + response.status.toString());
+        if (!response.ok) {
+            let errorMessage;
+            if (response.status === 404)
+                errorMessage = "Not found";
+            else if (response.status >= 500)
+                errorMessage = "Server error";
+            else
+                errorMessage = (await response.text())
+
+            throw new APIError(response.status, errorMessage);
+        }
 
         return (await response.json()) as TReturn;
     }

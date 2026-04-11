@@ -2,225 +2,117 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace NatrixServices.DnsBlocker;
 
-[Route("api/dnsblocker")]
+[Route("api/dnsblocker/users/{username}/")]
 [ApiController]
 public class UserAPI(DataContext DataContext) : ControllerBase
 {
     /* User data */
 
-    [HttpGet("users/{username}/requests/last")]
+    [HttpGet("requests/last")]
     [HeaderAuth]
-    public async Task<IActionResult> GetLastRequest(string username)
+    public async Task<IActionResult> GetLastRequest([FromRoute] string username)
     {
         UserData? userData = await DataContext.GetUserData(username);
         if (userData == null) return NotFound();
         return Ok(userData.LastRequest);
     }
 
-    [HttpGet("users/{username}/requests/count")]
+    [HttpGet("requests/count")]
     [HeaderAuth]
-    public async Task<IActionResult> GetRequestCount(string username)
+    public async Task<IActionResult> GetRequestCount([FromRoute] string username)
     {
         UserData? userData = await DataContext.GetUserData(username);
         if (userData == null) return NotFound();
         return Ok(userData.DnsRequestCount);
     }
 
-    /* User blocking management */
-
-    [HttpGet("users/{username}/blocking-enabled")]
+    [HttpGet("blocking-state")]
     [HeaderAuth]
-    public async Task<IActionResult> GetBlockingEnabled(string username)
+    public async Task<IActionResult> GetBlockingState(string username)
     {
         UserData? userData = await DataContext.GetUserData(username);
         if (userData == null) return NotFound();
-        return Ok(userData.EnableBlocking);
+        return Ok(new BlockingStateDTO { Enabled = userData.EnableBlocking });
     }
 
-    [HttpPut("users/{username}/blocking-enabled")]
+    [HttpPatch("blocking-state")]
     [HeaderAuth]
-    public async Task<IActionResult> SetBlockingEnabled(string username, [FromBody] SetBlockingEnabledRequest request)
+    public async Task<IActionResult> PatchBlockingState(string username, [FromBody] BlockingStateDTO state)
     {
         UserData? userData = await DataContext.GetUserData(username);
         if (userData == null) return NotFound();
-        userData.EnableBlocking = request.Enabled;
+        userData.EnableBlocking = state.Enabled;
+        await DataContext.SaveChangesAsync();
         return Ok();
     }
-    public record SetBlockingEnabledRequest(bool Enabled);
+}
 
-    /* Device blocking management */
+[Route("api/dnsblocker/users/{username}/devices")]
+[HeaderAuth]
+public class UserDeviceAPI(DataContext DataContext) : ListAPI<DeviceConfigDTO>("api/dnsblocker/users/{username}/devices")
+{
+    protected string Username => RouteData.Values["username"]?.ToString()!;
+    protected override async Task<Dictionary<string, DeviceConfigDTO>?> GetData()
+    {
+        var userData = await DataContext.GetUserData(Username);
+        if (userData == null) return null;
+        return userData.Devices;
+    }
+    protected override async Task SaveChanges() => await DataContext.SaveChangesAsync();
 
+    protected override object? GetItemProperty(string property, DeviceConfigDTO obj, out string? error)
+    {
+        error = null;
+        if (property == "blocking-state")
+            return new BlockingStateDTO { Enabled = obj.EnableBlocking };
 
+        error = "Invalid property";
+        return null;
+    }
 
+    protected override string? PatchItemProperty(string property, DeviceConfigDTO obj, object newData)
+    {
+        if (property == "blocking-state")
+        {
+            if (newData is not BlockingStateDTO blockingState)
+                return "Expected blocking state";
+            obj.EnableBlocking = blockingState.Enabled;
+        }
+        return "Invalid property";
+    }
+}
 
+[Route("api/dnsblocker/users/{username}/filters")]
+[HeaderAuth]
+public class UserFilterAPI(DataContext DataContext) : ListAPI<FilterReferenceDTO>("api/dnsblocker/users/{username}/filters")
+{
+    protected string Username => RouteData.Values["username"]?.ToString()!;
+    protected override async Task<Dictionary<string, FilterReferenceDTO>?> GetData()
+    {
+        var userData = await DataContext.GetUserData(Username);
+        if (userData == null) return null;
+        return userData.Filters;
+    }
+    protected override async Task SaveChanges() => await DataContext.SaveChangesAsync();
 
-    /* Old */
+    protected override object? GetItemProperty(string property, FilterReferenceDTO obj, out string? error)
+    {
+        error = null;
+        if (property == "blocking-state")
+            return new BlockingStateDTO { Enabled = obj.EnableBlocking };
 
-    //     [HttpGet("devices/{userId}")]
-    //     public async Task<IActionResult> GetDevices(UserId userId)
-    //     {
-    //         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
-    //         if (userConfig == null) return NotFound();
+        error = "Invalid property";
+        return null;
+    }
 
-    //         return Ok(userConfig.Devices);
-    //     }
-
-
-    //     [HttpPatch("devices/add/{userId}")]
-    //     public async Task<IActionResult> AddDevice(UserId userId, [FromBody] AddDeviceRequest data)
-    //     {
-    //         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
-    //         if (userConfig == null) return NotFound();
-
-    //         userConfig.Devices.Add(data.Device.Id, data.Device);
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
-    //     public record AddDeviceRequest(DeviceConfig Device);
-
-    //     [HttpPatch("devices/remove/{userId}")]
-    //     public async Task<IActionResult> RemoveDevice(UserId userId, [FromQuery] DeviceId deviceId)
-    //     {
-    //         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
-    //         if (userConfig == null) return NotFound();
-
-    //         userConfig.Devices.Remove(deviceId);
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
-
-
-    //     [HttpGet("filters/{userId}")]
-    //     public async Task<IActionResult> GetFilters(UserId userId)
-    //     {
-    //         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
-    //         if (userConfig == null) return NotFound();
-
-    //         return Ok(userConfig.Filters);
-    //     }
-
-    //     [HttpPatch("filters/add/{userId}")]
-    //     public async Task<IActionResult> AddFilter(UserId userId, [FromBody] AddFilterRequest data)
-    //     {
-    //         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
-    //         if (userConfig == null) return NotFound();
-
-    //         userConfig.Filters.Add(data.Filter.Id, data.Filter);
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
-    //     public record AddFilterRequest(FilterReference Filter);
-
-    //     [HttpPatch("filters/remove/{userId}")]
-    //     public async Task<IActionResult> RemoveFilter(UserId userId, [FromQuery] FilterId filterId)
-    //     {
-    //         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
-    //         if (userConfig == null) return NotFound();
-
-    //         userConfig.Filters.Remove(filterId);
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
-
-
-    //     private async Task<IBlockingConfig?> GetBlockingConfig(UserId userId, DeviceId? deviceId, FilterId? filterId)
-    //     {
-    //         // Can't get a device and a filter at the same time
-    //         if (deviceId != null && filterId != null)
-    //             return null;
-
-    //         UserConfig? userConfig = await ConfigContext.GetUserData(userId);
-    //         if (userConfig == null) return null;
-
-    //         if (deviceId != null)
-    //             return userConfig.Devices.GetValueOrDefault(deviceId);
-
-    //         if (filterId != null)
-    //             return userConfig.Filters.GetValueOrDefault(filterId);
-
-    //         return userConfig;
-    //     }
-    // }
-
-    // [Route("api/dnsblocker/config/global")]
-    // [ApiController]
-    // public class ConfigGlobalAPI(ConfigContext ConfigContext) : ControllerBase
-    // {
-    //     [HttpGet("blockingenabled")]
-    //     public async Task<IActionResult> GetBlockingEnabled()
-    //     {
-    //         GlobalConfig config = await ConfigContext.GetGlobalData();
-
-    //         return Ok(config.EnableBlocking);
-    //     }
-
-    //     [HttpPatch("blockingenabled")]
-    //     [AdminOnly]
-    //     public async Task<IActionResult> SetBlockingEnabled([FromQuery] bool enabled)
-    //     {
-    //         GlobalConfig config = await ConfigContext.GetGlobalData();
-
-    //         config.EnableBlocking = enabled;
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
-
-
-    //     [HttpGet("dnsenabled")]
-    //     public async Task<IActionResult> GetDnsEnabled()
-    //     {
-    //         GlobalConfig config = await ConfigContext.GetGlobalData();
-
-    //         return Ok(config.EnableDnsServer);
-    //     }
-
-    //     [HttpPatch("dnsenabled")]
-    //     [AdminOnly]
-    //     public async Task<IActionResult> SetDnsEnabled([FromQuery] bool enabled)
-    //     {
-    //         GlobalConfig config = await ConfigContext.GetGlobalData();
-
-    //         config.EnableDnsServer = enabled;
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
-
-    //     [HttpGet("filters")]
-    //     public async Task<IActionResult> GetFilters()
-    //     {
-    //         GlobalConfig config = await ConfigContext.GetGlobalData();
-
-    //         return Ok(config.Filters);
-    //     }
-
-    //     [HttpPatch("filters/add")]
-    //     [AdminOnly]
-    //     public async Task<IActionResult> AddFilter([FromBody] AddFilterRequest data)
-    //     {
-    //         GlobalConfig config = await ConfigContext.GetGlobalData();
-
-    //         config.Filters.Add(data.Filter.Id, data.Filter);
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
-    //     public record AddFilterRequest(FilterConfig Filter);
-
-    //     [HttpPatch("filters/remove")]
-    //     [AdminOnly]
-    //     public async Task<IActionResult> AddFilter([FromQuery] FilterId filterId)
-    //     {
-    //         GlobalConfig config = await ConfigContext.GetGlobalData();
-
-    //         config.Filters.Remove(filterId);
-    //         await ConfigContext.SaveChangesAsync();
-
-    //         return Ok();
-    //     }
+    protected override string? PatchItemProperty(string property, FilterReferenceDTO obj, object newData)
+    {
+        if (property == "blocking-state")
+        {
+            if (newData is not BlockingStateDTO blockingState)
+                return "Expected blocking state";
+            obj.EnableBlocking = blockingState.Enabled;
+        }
+        return "Invalid property";
+    }
 }

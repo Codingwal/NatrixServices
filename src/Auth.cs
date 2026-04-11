@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -39,6 +40,9 @@ public class AdminOnlyAttribute : ActionFilterAttribute
 {
     public override void OnActionExecuting(ActionExecutingContext context)
     {
+        bool allowAnonymous = context.ActionDescriptor.EndpointMetadata.Any(m => m is AllowAnonymousAttribute);
+        if (allowAnonymous) return;
+
         string? error = Auth.VerifyAdminPassword(context.HttpContext.Request);
 
         if (error == null)

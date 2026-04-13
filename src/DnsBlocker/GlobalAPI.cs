@@ -71,7 +71,12 @@ public class GlobalFilterAPI(DataContext DataContext) : ListAPI<FilterConfigDTO>
     public override async Task<IActionResult> GetAllItems() => await base.GetAllItems();
 
     protected override async Task<Dictionary<string, FilterConfigDTO>?> GetData() => (await DataContext.GetGlobalData()).Filters;
-    protected override async Task SaveChanges() => await DataContext.SaveChangesAsync();
+    protected override async Task SaveChanges()
+    {
+        var entry = DataContext.ChangeTracker.Entries<GlobalData>().FirstOrDefault();
+        entry?.Property(u => u.Filters).IsModified = true;
+        await DataContext.SaveChangesAsync();
+    }
 
     protected override object? GetItemProperty(string property, FilterConfigDTO obj, out string? error)
     {

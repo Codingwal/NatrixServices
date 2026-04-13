@@ -1,7 +1,7 @@
 import { ListRenderer } from "./ListRenderer.js";
 import { deviceConfigTemplate, filterReferenceTemplate } from "./Templates.js";
 import { ListController } from "./ListController.js";
-import { ListAPI } from "./Utility/API.js";
+import { API, ListAPI } from "./Utility/API.js";
 import { hash } from "./Utility/Hash.js";
 const username = sessionStorage.getItem("username");
 const password = sessionStorage.getItem("password");
@@ -50,12 +50,19 @@ const deviceController = new ListController(new ListRenderer({
     container: document.getElementById("deviceList"),
     template: deviceConfigTemplate,
     buttonHandler: handleDeviceButton
-}), new ListAPI(`${userBaseUrl}devices`, authHeader), "id");
+}), new ListAPI(`${userBaseUrl}devices/`, authHeader), "id");
 const filterController = new ListController(new ListRenderer({
     container: document.getElementById("filterList"),
     template: filterReferenceTemplate,
     buttonHandler: handleFilterButton
-}), new ListAPI(`${userBaseUrl}filters`, authHeader), "id");
+}), new ListAPI(`${userBaseUrl}filters/`, authHeader), "id");
+if (filterController.items.length == 0) {
+    const filterMap = await API.get("/api/dnsblocker/global/filters", new Headers());
+    Object.values(filterMap).forEach(config => {
+        var filterRef = { id: config.id, enableBlocking: false };
+        filterController.addItem(filterRef);
+    });
+}
 async function handleDeviceButton(item, index, action) {
     if (action === "enable") {
         item.enableBlocking = !item.enableBlocking;
@@ -75,13 +82,12 @@ async function handleFilterButton(item, index, action) {
     }
 }
 async function getGlobalEnabled() {
-    return true;
-    // const state = await API.get<BlockingState>(`${userBaseUrl}blocking-state`, authHeader);
-    // return state.enabled;
+    const state = await API.get(`${userBaseUrl}blocking-state`, authHeader);
+    return state.enabled;
 }
 async function setGlobalEnabled(value) {
-    // const state: BlockingState = { enabled: value };
-    // await API.put(`${userBaseUrl}blocking-state`, authHeader, state);
+    const state = { enabled: value };
+    await API.patch(`${userBaseUrl}blocking-state`, authHeader, state);
 }
 function updateGlobalEnabledButton() {
     globalEnabledButton.classList.remove("on", "off");

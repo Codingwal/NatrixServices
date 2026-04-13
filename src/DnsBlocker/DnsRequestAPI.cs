@@ -6,15 +6,15 @@ namespace NatrixServices.DnsBlocker;
 
 [Route("dns-query")]
 [ApiController]
-public class DnsRequestAPI(ILogger<DnsRequestAPI> Logger, ConfigContext ConfigContext, DataContext DataContext) : ControllerBase
+public class DnsRequestAPI(ILogger<DnsRequestAPI> Logger, DataContext DataContext) : ControllerBase
 {
     private const string DNS_CONTENT_TYPE = "application/dns-message";
     private const int NOT_ALLOWED = 405;
 
     [HttpPost]
-    [HttpPost("{userId}")]
-    [HttpPost("{userId}/{deviceId}")]
-    public async Task<IActionResult> PostDnsQuery(UserId? userId = null, DeviceId? deviceId = null)
+    [HttpPost("{username}")]
+    [HttpPost("{username}/{deviceId}")]
+    public async Task<IActionResult> PostDnsQuery(string? username = null, DeviceId? deviceId = null)
     {
         if (Request.ContentType != DNS_CONTENT_TYPE)
             return StatusCode(NOT_ALLOWED);
@@ -23,13 +23,13 @@ public class DnsRequestAPI(ILogger<DnsRequestAPI> Logger, ConfigContext ConfigCo
         await Request.Body.CopyToAsync(stream);
         byte[] query = stream.ToArray();
 
-        return await ProcessDnsRequest(query, userId, deviceId);
+        return await ProcessDnsRequest(query, username, deviceId);
     }
 
     [HttpGet()]
-    [HttpGet("{userId}")]
-    [HttpGet("{userId}/{deviceId}")]
-    public async Task<IActionResult> GetDnsQuery([FromQuery] string dns, UserId? userId = null, DeviceId? deviceId = null)
+    [HttpGet("{username}")]
+    [HttpGet("{username}/{deviceId}")]
+    public async Task<IActionResult> GetDnsQuery([FromQuery] string dns, string? username = null, DeviceId? deviceId = null)
     {
         if (string.IsNullOrEmpty(dns))
             return BadRequest();
@@ -42,10 +42,10 @@ public class DnsRequestAPI(ILogger<DnsRequestAPI> Logger, ConfigContext ConfigCo
         if (dns.Length % 4 != 0)
             base64 += new string('=', 4 - dns.Length % 4);
 
-        return await ProcessDnsRequest(Convert.FromBase64String(base64), userId, deviceId);
+        return await ProcessDnsRequest(Convert.FromBase64String(base64), username, deviceId);
     }
 
-    private async Task<IActionResult> ProcessDnsRequest(byte[] queryBytes, UserId? userId, DeviceId? deviceId)
+    private async Task<IActionResult> ProcessDnsRequest(byte[] queryBytes, string? username, DeviceId? deviceId)
     {
         DnsMessage query;
         try
@@ -58,8 +58,8 @@ public class DnsRequestAPI(ILogger<DnsRequestAPI> Logger, ConfigContext ConfigCo
             return BadRequest();
         }
 
-        DnsBlocker dnsBlocker = new(Logger, ConfigContext, DataContext);
-        DnsMessage? response = await dnsBlocker.ProcessDnsQuery(query, userId, deviceId);
+        DnsBlocker dnsBlocker = new(Logger, DataContext);
+        DnsMessage? response = await dnsBlocker.ProcessDnsQuery(query, username, deviceId);
 
         if (response == null)
             return BadRequest();

@@ -7,9 +7,10 @@ export class ListController {
         this.renderer = renderer;
         this.api = api;
         this.idKey = idKey;
+        this.update();
     }
     async update() {
-        this.items = await this.api.getItems();
+        this.items = Object.values(await this.api.getItems());
         this.render();
     }
     async addItem(item) {

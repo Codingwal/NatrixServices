@@ -154,13 +154,21 @@ public record ChessBoardDTO
     }
 }
 
-public record UserDataDTO(UserData userData)
+public record UserDataDTO
 {
-    public string Username { get; set; } = userData.Username;
-    public string Title { get; set; } = userData.TitleHolder ? "Title holder" : userData.Stats.GetTitle().Item1;
-    public string TitleDescription { get; set; } = userData.TitleHolder ? "The reigning champion" : userData.Stats.GetTitle().Item2;
-    public int SeasonsWon { get; set; } = userData.SeasonsWon;
-    public int TournamentsWon { get; set; } = userData.TournamentsWon;
+    public string Username { get; set; }
+    public string Title { get; set; }
+    public string TitleDescription { get; set; }
+    public int SeasonsWon { get; set; }
+    public int TournamentsWon { get; set; }
+    public UserDataDTO(UserData userData)
+    {
+        Username = userData.Username;
+        Title = userData.TitleHolder ? "Title holder" : userData.Stats.GetTitle().Item1;
+        TitleDescription = userData.TitleHolder ? "The reigning champion" : userData.Stats.GetTitle().Item2;
+        SeasonsWon = userData.SeasonsWon;
+        TournamentsWon = userData.TournamentsWon;
+    }
 }
 
 public record MoveDTO

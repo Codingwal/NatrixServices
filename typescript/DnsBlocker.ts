@@ -1,9 +1,10 @@
 import { ListRenderer } from "./ListRenderer.js"
-import { BlockingState, DeviceConfig, FilterReference } from "./Data.js";
+import { BlockingState, DeviceConfig, FilterConfig, FilterReference } from "./Data.js";
 import { deviceConfigTemplate, filterReferenceTemplate } from "./Templates.js";
 import { ListController } from "./ListController.js";
 import { API, ListAPI } from "./Utility/API.js";
 import { hash } from "./Utility/Hash.js";
+import { genAppleConfig } from "./ConfigGenerator.js";
 
 const username = sessionStorage.getItem("username")!;
 const password = sessionStorage.getItem("password")!;
@@ -56,14 +57,13 @@ globalEnabledButton.addEventListener("click", async () => {
     updateGlobalEnabledButton();
 });
 
-
 const deviceController = new ListController<DeviceConfig>(
     new ListRenderer<DeviceConfig>({
         container: document.getElementById("deviceList")!,
         template: deviceConfigTemplate,
         buttonHandler: handleDeviceButton
     }),
-    new ListAPI<DeviceConfig>(`${userBaseUrl}devices`, authHeader),
+    new ListAPI<DeviceConfig>(`${userBaseUrl}devices/`, authHeader),
     "id"
 );
 
@@ -73,9 +73,17 @@ const filterController = new ListController<FilterReference>(
         template: filterReferenceTemplate,
         buttonHandler: handleFilterButton
     }),
-    new ListAPI<FilterReference>(`${userBaseUrl}filters`, authHeader),
+    new ListAPI<FilterReference>(`${userBaseUrl}filters/`, authHeader),
     "id"
 );
+
+if (filterController.items.length == 0) {
+    const filterMap = await API.get<Record<string, FilterConfig>>("/api/dnsblocker/global/filters", new Headers());
+    Object.values(filterMap).forEach(config => {
+        var filterRef: FilterReference = { id: config.id, enableBlocking: false };
+        filterController.addItem(filterRef);
+    });
+}
 
 async function handleDeviceButton(item: DeviceConfig, index: number, action: string): Promise<void> {
     if (action === "enable") {
@@ -86,6 +94,11 @@ async function handleDeviceButton(item: DeviceConfig, index: number, action: str
     }
     else if (action === "delete")
         await deviceController.removeItem(item.id);
+    else if (action === "genConfig") {
+        const url = "";
+        const config = genAppleConfig(url);
+        // TODO: Download file
+    }
 }
 
 async function handleFilterButton(item: FilterReference, index: number, action: string): Promise<void> {
@@ -98,14 +111,13 @@ async function handleFilterButton(item: FilterReference, index: number, action: 
 }
 
 async function getGlobalEnabled(): Promise<boolean> {
-    return true;
-    // const state = await API.get<BlockingState>(`${userBaseUrl}blocking-state`, authHeader);
-    // return state.enabled;
+    const state = await API.get<BlockingState>(`${userBaseUrl}blocking-state`, authHeader);
+    return state.enabled;
 }
 
 async function setGlobalEnabled(value: boolean): Promise<void> {
-    // const state: BlockingState = { enabled: value };
-    // await API.put(`${userBaseUrl}blocking-state`, authHeader, state);
+    const state: BlockingState = { enabled: value };
+    await API.patch(`${userBaseUrl}blocking-state`, authHeader, state);
 }
 
 function updateGlobalEnabledButton(): void {

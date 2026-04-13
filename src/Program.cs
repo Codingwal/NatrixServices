@@ -23,7 +23,6 @@ public static class Program
 
         builder.Services.AddControllers();
 
-        builder.Services.AddDbContext<DnsBlocker.ConfigContext>(options => options.UseSqlite("Data Source=data/dnsblocker/config.db"));
         builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
         builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
 
@@ -49,7 +48,6 @@ public static class Program
         using (var scope = app.Services.CreateScope())
         {
             Directory.CreateDirectory("data/dnsblocker");
-            scope.ServiceProvider.GetRequiredService<DnsBlocker.ConfigContext>().Init();
             scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
 
             Directory.CreateDirectory("data/chess");

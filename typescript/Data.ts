@@ -11,3 +11,9 @@ export interface FilterReference {
 export interface BlockingState {
     enabled: boolean
 }
+
+export interface FilterConfig {
+    id: string;
+    description: string;
+    domainsToBlock: string[];
+}

@@ -14,7 +14,7 @@ public class DataContext(DbContextOptions<DataContext> options) : DataContext<Us
 
         modelBuilder.Entity<UserData>(b =>
         {
-            b.OwnsOne(u => u.Stats);
+            b.Property(u => u.Stats).SaveAsJson();
         });
 
         modelBuilder.Entity<GameDataDTO>(b =>

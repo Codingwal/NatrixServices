@@ -1,18 +1,20 @@
 import { ListAPI } from "./Utility/API";
 import { ListRenderer } from "./ListRenderer";
-import { FilteredKeysOf } from "./Utility/Utillity";
+import { FilteredKeysOf } from "./Utility/Utility";
 
 export class ListController<T> {
-    private items: T[] = [];
+    public items: T[] = [];
 
     public constructor(
         private renderer: ListRenderer<T>,
         public api: ListAPI<T>,
         private idKey: FilteredKeysOf<T, string>
-    ) { }
+    ) {
+        this.update();
+    }
 
     public async update(): Promise<void> {
-        this.items = await this.api.getItems();
+        this.items = Object.values(await this.api.getItems());
         this.render();
     }
 

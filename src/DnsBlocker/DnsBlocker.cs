@@ -25,11 +25,9 @@ public class DnsBlockerService(IServiceProvider ServiceProvider, ILogger<DnsBloc
         {
             if (e.Query is not DnsMessage query) return;
 
-            // using IServiceScope scope = ServiceProvider.CreateScope();
-            var configContext = ServiceProvider.GetRequiredService<ConfigContext>();
             var dataContext = ServiceProvider.GetRequiredService<DataContext>();
 
-            DnsBlocker dnsBlocker = new(Logger, configContext, dataContext);
+            DnsBlocker dnsBlocker = new(Logger, dataContext);
             e.Response = await dnsBlocker.ProcessDnsQuery(query, null, null);
 
             Logger.LogInformation("Finished handling dns request");
@@ -41,17 +39,17 @@ public class DnsBlockerService(IServiceProvider ServiceProvider, ILogger<DnsBloc
     }
 }
 
-public class DnsBlocker(ILogger Logger, ConfigContext ConfigContext, DataContext DataContext)
+public class DnsBlocker(ILogger Logger, DataContext DataContext)
 {
-    public async Task<DnsMessage?> ProcessDnsQuery(DnsMessage query, UserId? userId, DeviceId? deviceId)
+    public async Task<DnsMessage?> ProcessDnsQuery(DnsMessage query, string? username, DeviceId? deviceId)
     {
         if (query.Questions.Count == 0) return null;
 
         // Get the DataContext
-        GlobalConfig globalConfig = await ConfigContext.GetGlobalData();
+        var globalData = await DataContext.GetGlobalData();
 
         // Return if the dns server should do nothing at all
-        if (!globalConfig.EnableDnsServer)
+        if (!globalData.EnableDnsServer)
         {
             Logger.LogInformation($"Ignoring request because globalConfig.EnableDnsServer is false");
             return null;
@@ -65,7 +63,7 @@ public class DnsBlocker(ILogger Logger, ConfigContext ConfigContext, DataContext
 
         // Block or forward the DNS request
         DnsMessage response = query.CreateResponseInstance();
-        bool blockDomain = await BlockDomain(domainName, userId, deviceId, ConfigContext);
+        bool blockDomain = await BlockDomain(domainName, username, deviceId, DataContext);
         if (blockDomain)
         {
             Logger.LogInformation($"Blocking \"{domainName}\"");
@@ -85,12 +83,12 @@ public class DnsBlocker(ILogger Logger, ConfigContext ConfigContext, DataContext
                 Logger.LogError("Error: upstreamResponse is null");
         }
 
-        DnsRequest requestData = new()
+        DnsRequestDTO requestData = new()
         {
             Time = DateTimeOffset.UtcNow,
             Domain = domainName,
             Blocked = blockDomain,
-            UserId = userId,
+            Username = username,
             DeviceId = deviceId
         };
 
@@ -98,50 +96,47 @@ public class DnsBlocker(ILogger Logger, ConfigContext ConfigContext, DataContext
 
         return response;
     }
-    private static async Task<bool> BlockDomain(string domainName, UserId? userId, DeviceId? deviceId, ConfigContext configContext)
+    private static async Task<bool> BlockDomain(string domainName, string? username, DeviceId? deviceId, DataContext dataContext)
     {
-        GlobalConfig globalConfig = await configContext.GetGlobalData();
+        var globalData = await dataContext.GetGlobalData();
 
-        if (!globalConfig.EnableBlocking)
+        if (!globalData.EnableBlocking)
             return false;
 
         List<string> domainsToBlock = [];
-        if (userId == null)
+        if (username == null)
             domainsToBlock = ["jamf", "test.de"];
         else
         {
-            UserConfig? userConfig = await configContext.GetUserData(userId);
-            if (userConfig == null) return false;
+            var userData = await dataContext.GetUserData(username);
+            if (userData == null) return false;
 
-            if (!BlockingEnabled(userConfig, deviceId, globalConfig))
+            if (!BlockingEnabled(userData, deviceId))
                 return false;
 
-            domainsToBlock = GetDomainsToBlock(userConfig, globalConfig);
+            domainsToBlock = GetDomainsToBlock(userData, globalData);
         }
 
         bool blockDomain = domainsToBlock.Any(x => domainName.Contains(x, StringComparison.OrdinalIgnoreCase));
 
         return blockDomain;
     }
-    private static bool BlockingEnabled(UserConfig userConfig, DeviceId? deviceId, GlobalConfig globalConfig)
+    private static bool BlockingEnabled(UserData userData, DeviceId? deviceId)
     {
-        if (!globalConfig.EnableBlocking)
-            return false;
-
         if (deviceId == null)
-            return userConfig.EnableBlocking;
+            return userData.EnableBlocking;
 
-        if (!userConfig.Devices.TryGetValue(deviceId, out DeviceConfig? deviceConfig))
+        if (!userData.Devices.TryGetValue(deviceId, out var deviceConfig))
             return false;
 
         return deviceConfig.EnableBlocking;
     }
-    private static List<string> GetDomainsToBlock(UserConfig userConfig, GlobalConfig globalConfig)
+    private static List<string> GetDomainsToBlock(UserData userData, GlobalData globalData)
     {
         List<string> domainsToBlock = [];
-        foreach ((_, FilterReference filterRef) in userConfig.Filters)
+        foreach (FilterReferenceDTO filterRef in userData.Filters.Values)
         {
-            if (!globalConfig.Filters.TryGetValue(filterRef.Id, out FilterConfig? filterConfig))
+            if (!globalData.Filters.TryGetValue(filterRef.Id, out var filterConfig))
                 continue;
 
             domainsToBlock.AddRange(filterConfig.DomainsToBlock);
@@ -149,15 +144,15 @@ public class DnsBlocker(ILogger Logger, ConfigContext ConfigContext, DataContext
         return domainsToBlock;
     }
 
-    private async Task UpdateData(DnsRequest requestData)
+    private async Task UpdateData(DnsRequestDTO requestData)
     {
         GlobalData globalData = await DataContext.GetGlobalData();
         globalData.DnsRequestCount++;
         globalData.LastRequest = requestData;
 
-        if (requestData.UserId != null)
+        if (requestData.Username != null)
         {
-            UserData userData = await DataContext.GetUserData(requestData.UserId) ?? new();
+            UserData userData = await DataContext.GetUserData(requestData.Username) ?? new();
             userData.DnsRequestCount++;
             userData.LastRequest = requestData with { }; // with { } creates a shallow copy
         }

@@ -12,7 +12,7 @@ public abstract class UserDataBase
 }
 
 public class DataContext<TUser, TGlobal>(DbContextOptions options) : DbContext(options)
-    where TUser : UserDataBase
+    where TUser : UserDataBase, new()
     where TGlobal : class, new()
 {
     public DbSet<TUser> UserData => Set<TUser>();
@@ -35,7 +35,7 @@ public class DataContext<TUser, TGlobal>(DbContextOptions options) : DbContext(o
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // SQLite needs some sort of id, TGlobal doesn't contain any as there is only one element
+        // SQLite needs some sort of id. TGlobal doesn't contain any as there is only one element
         modelBuilder.Entity<TGlobal>().Property<string>("id");
         modelBuilder.Entity<TGlobal>().HasKey("id");
 
@@ -44,9 +44,19 @@ public class DataContext<TUser, TGlobal>(DbContextOptions options) : DbContext(o
         modelBuilder.Entity<TGlobal>().ToTable("GlobalData");
     }
 
-    public async Task<TUser?> GetUserData(string username)
+    public async Task<TUser> GetUserData(string username)
     {
         TUser? userData = await UserData.FindAsync(username);
+
+        if (userData == null)
+        {
+            userData = new TUser
+            {
+                Username = username
+            };
+            await UserData.AddAsync(userData);
+        }
+
         return userData;
     }
     public async Task<TGlobal> GetGlobalData()

@@ -23,7 +23,7 @@ enum Action {
 
 async function getAuth(): Promise<Auth | null> {
     const auth: Auth = {
-        username: usernameField.value,
+        username: usernameField.value.toLowerCase(),
         password: passwordField.value,
         passwordHash: await hash(passwordField.value)
     }
@@ -51,15 +51,17 @@ async function onButtonPressed(action: Action): Promise<void> {
         if (action === Action.Login)
             await API.get(`/api/users/${auth.username}`, new Headers({ "username": auth.username, "passwordHash": auth.passwordHash }));
         else if (action === Action.Register)
-            await API.post("/api/users/", new Headers(), auth);
+            await API.post("/api/users/", new Headers(), { username: auth.username, passwordHash: auth.passwordHash });
     }
     catch (error) {
         if (error instanceof APIError) {
-            if (error.statusCode === 401)
-                errorField.innerText = error.serverMessage;
+            if (error.statusCode === 401 && action == Action.Login)
+                errorField.innerText = "Invalid username or password!";
+            else if (error.statusCode === 400 && action == Action.Register)
+                errorField.innerText = "You cannot create an account with this username.";
             else
-                errorField.innerText = "Server error! Please try again."
-            // return;
+                errorField.innerText = "Server or internal error! Please try again."
+            return;
         }
         else
             throw error;

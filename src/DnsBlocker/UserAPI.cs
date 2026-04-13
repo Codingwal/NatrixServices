@@ -12,8 +12,7 @@ public class UserAPI(DataContext DataContext) : ControllerBase
     [HeaderAuth]
     public async Task<IActionResult> GetLastRequest([FromRoute] string username)
     {
-        UserData? userData = await DataContext.GetUserData(username);
-        if (userData == null) return NotFound();
+        var userData = await DataContext.GetUserData(username);
         return Ok(userData.LastRequest);
     }
 
@@ -21,8 +20,7 @@ public class UserAPI(DataContext DataContext) : ControllerBase
     [HeaderAuth]
     public async Task<IActionResult> GetRequestCount([FromRoute] string username)
     {
-        UserData? userData = await DataContext.GetUserData(username);
-        if (userData == null) return NotFound();
+        var userData = await DataContext.GetUserData(username);
         return Ok(userData.DnsRequestCount);
     }
 
@@ -30,8 +28,7 @@ public class UserAPI(DataContext DataContext) : ControllerBase
     [HeaderAuth]
     public async Task<IActionResult> GetBlockingState(string username)
     {
-        UserData? userData = await DataContext.GetUserData(username);
-        if (userData == null) return NotFound();
+        var userData = await DataContext.GetUserData(username);
         return Ok(new BlockingStateDTO { Enabled = userData.EnableBlocking });
     }
 
@@ -39,8 +36,7 @@ public class UserAPI(DataContext DataContext) : ControllerBase
     [HeaderAuth]
     public async Task<IActionResult> PatchBlockingState(string username, [FromBody] BlockingStateDTO state)
     {
-        UserData? userData = await DataContext.GetUserData(username);
-        if (userData == null) return NotFound();
+        var userData = await DataContext.GetUserData(username);
         userData.EnableBlocking = state.Enabled;
         await DataContext.SaveChangesAsync();
         return Ok();
@@ -51,14 +47,14 @@ public class UserAPI(DataContext DataContext) : ControllerBase
 [HeaderAuth]
 public class UserDeviceAPI(DataContext DataContext) : ListAPI<DeviceConfigDTO>("api/dnsblocker/users/{username}/devices")
 {
-    protected string Username => RouteData.Values["username"]?.ToString()!;
-    protected override async Task<Dictionary<string, DeviceConfigDTO>?> GetData()
+    protected string Username => RouteData.Values["username"]!.ToString()!;
+    protected override async Task<Dictionary<string, DeviceConfigDTO>?> GetData() => (await DataContext.GetUserData(Username)).Devices;
+    protected override async Task SaveChanges()
     {
-        var userData = await DataContext.GetUserData(Username);
-        if (userData == null) return null;
-        return userData.Devices;
+        var entry = DataContext.ChangeTracker.Entries<UserData>().FirstOrDefault(e => e.Entity.Username == Username);
+        entry?.Property(u => u.Devices).IsModified = true;
+        await DataContext.SaveChangesAsync();
     }
-    protected override async Task SaveChanges() => await DataContext.SaveChangesAsync();
 
     protected override object? GetItemProperty(string property, DeviceConfigDTO obj, out string? error)
     {
@@ -86,14 +82,14 @@ public class UserDeviceAPI(DataContext DataContext) : ListAPI<DeviceConfigDTO>("
 [HeaderAuth]
 public class UserFilterAPI(DataContext DataContext) : ListAPI<FilterReferenceDTO>("api/dnsblocker/users/{username}/filters")
 {
-    protected string Username => RouteData.Values["username"]?.ToString()!;
-    protected override async Task<Dictionary<string, FilterReferenceDTO>?> GetData()
+    protected string Username => RouteData.Values["username"]!.ToString()!;
+    protected override async Task<Dictionary<string, FilterReferenceDTO>?> GetData() => (await DataContext.GetUserData(Username)).Filters;
+    protected override async Task SaveChanges()
     {
-        var userData = await DataContext.GetUserData(Username);
-        if (userData == null) return null;
-        return userData.Filters;
+        var entry = DataContext.ChangeTracker.Entries<UserData>().FirstOrDefault(e => e.Entity.Username == Username);
+        entry?.Property(u => u.Filters).IsModified = true;
+        await DataContext.SaveChangesAsync();
     }
-    protected override async Task SaveChanges() => await DataContext.SaveChangesAsync();
 
     protected override object? GetItemProperty(string property, FilterReferenceDTO obj, out string? error)
     {

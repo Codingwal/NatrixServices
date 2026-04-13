@@ -10,8 +10,9 @@ export const deviceConfigTemplate = (item: DeviceConfig) =>
     /* html */ `
     <h3>${item.id}</h3>
     <div>
-        <button class="element circle" data-action="enable">${item.enableBlocking ? "ON" : "OFF"}</button>
-        <button class="deleteButton element circle" data-action="delete"> </button>
+        <button data-action="genConfig" class="element circle">config</button>
+        <button data-action="enable" class="element circle">${item.enableBlocking ? "ON" : "OFF"}</button>
+        <button data-action="delete" class="deleteButton element circle"></button>
     </div>`;
 
 export const filterReferenceTemplate = (item: FilterReference) =>

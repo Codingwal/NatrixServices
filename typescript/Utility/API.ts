@@ -39,7 +39,8 @@ export class API {
         body?: TBody
     ): Promise<TReturn> {
         headers.set("Content-Type", "application/json");
-        const fullUrl = url + urlParams.toString();
+        const urlParamsStr = urlParams.toString()
+        const fullUrl = urlParamsStr ? `${url}?${urlParamsStr}` : url;
 
         const response = await fetch(fullUrl, {
             method: method,
@@ -51,13 +52,18 @@ export class API {
             let errorMessage;
             if (response.status === 404)
                 errorMessage = "Not found";
+            else if (response.status === 401)
+                errorMessage = "Unauthorized";
             else if (response.status >= 500)
                 errorMessage = "Server error";
             else
-                errorMessage = (await response.text())
+                errorMessage = "Unknown error";
 
             throw new APIError(response.status, errorMessage);
         }
+
+        if (response.headers.get("content-length") === "0")
+            return null as TReturn;
 
         return (await response.json()) as TReturn;
     }
@@ -70,23 +76,23 @@ export class ListAPI<T> {
         private authHeaders: Headers
     ) { }
 
-    public async getItems(): Promise<T[]> {
-        const data: T[] = [];
-        return data;
-        // return await API.get<T[]>(this.baseUrl, this.authHeaders);
+    public async getItems(): Promise<Record<string, T>> {
+        return await API.get(this.baseUrl, this.authHeaders);
     }
 
     public async addItem(item: Partial<T>): Promise<T> {
-        return item as T;
-        // return await API.post<T, Partial<T>>(this.baseUrl, this.authHeaders, item);
+        return await API.post<T, Partial<T>>(this.baseUrl, this.authHeaders, item);
     }
 
     public async removeItem(id: string): Promise<void> {
-        // await API.delete(this.baseUrl + id, this.authHeaders);
+        await API.delete(this.baseUrl + id, this.authHeaders);
     }
 
     public async setProperty<TProperty>(id: string, property: string, value: Partial<TProperty>): Promise<TProperty> {
-        return value as TProperty;
-        // return await API.patch(`${this.baseUrl}${id}/${property}`, this.authHeaders, value);
+        return await API.patch(`${this.baseUrl}${id}/${property}`, this.authHeaders, value);
+    }
+
+    public async getProperty<TProperty>(id: string, property: string): Promise<TProperty> {
+        return await API.get<TProperty>(`${this.baseUrl}${id}/${property}`, this.authHeaders);
     }
 }

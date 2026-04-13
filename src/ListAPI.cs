@@ -29,7 +29,9 @@ public abstract class ListAPI<T>(string BaseUrl) : ControllerBase where T : clas
         data.Add(obj.Id, obj);
         await SaveChanges();
 
-        return Created($"{BaseUrl}{obj.Id}", obj);
+        Console.WriteLine($"Created object with id \"{obj.Id}\"");
+
+        return Created($"{BaseUrl}/{obj.Id}", obj);
     }
 
     [HttpDelete("{itemId}")]
@@ -50,7 +52,7 @@ public abstract class ListAPI<T>(string BaseUrl) : ControllerBase where T : clas
         var data = await GetData();
         if (data == null) return NotFound();
 
-        if (!data.TryGetValue(itemId, out T? obj)) return NotFound();
+        if (!data.TryGetValue(itemId, out T? obj)) return NotFound("Item does not exist");
 
         object? value = GetItemProperty(property, obj, out string? error);
 
@@ -66,7 +68,9 @@ public abstract class ListAPI<T>(string BaseUrl) : ControllerBase where T : clas
         var data = await GetData();
         if (data == null) return NotFound();
 
-        T obj = data[itemId];
+        if (!data.TryGetValue(itemId, out T? obj))
+            return NotFound("Item does not exist");
+
         string? error = PatchItemProperty(property, obj, newData);
 
         if (error != null)

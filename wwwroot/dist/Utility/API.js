@@ -27,7 +27,8 @@ export class API {
     }
     static async request(url, method, headers, urlParams, body) {
         headers.set("Content-Type", "application/json");
-        const fullUrl = url + urlParams.toString();
+        const urlParamsStr = urlParams.toString();
+        const fullUrl = urlParamsStr ? `${url}?${urlParamsStr}` : url;
         const response = await fetch(fullUrl, {
             method: method,
             headers: headers,
@@ -37,12 +38,16 @@ export class API {
             let errorMessage;
             if (response.status === 404)
                 errorMessage = "Not found";
+            else if (response.status === 401)
+                errorMessage = "Unauthorized";
             else if (response.status >= 500)
                 errorMessage = "Server error";
             else
-                errorMessage = (await response.text());
+                errorMessage = "Unknown error";
             throw new APIError(response.status, errorMessage);
         }
+        if (response.headers.get("content-length") === "0")
+            return null;
         return (await response.json());
     }
 }
@@ -54,19 +59,18 @@ export class ListAPI {
         this.authHeaders = authHeaders;
     }
     async getItems() {
-        const data = [];
-        return data;
-        // return await API.get<T[]>(this.baseUrl, this.authHeaders);
+        return await API.get(this.baseUrl, this.authHeaders);
     }
     async addItem(item) {
-        return item;
-        // return await API.post<T, Partial<T>>(this.baseUrl, this.authHeaders, item);
+        return await API.post(this.baseUrl, this.authHeaders, item);
     }
     async removeItem(id) {
-        // await API.delete(this.baseUrl + id, this.authHeaders);
+        await API.delete(this.baseUrl + id, this.authHeaders);
     }
     async setProperty(id, property, value) {
-        return value;
-        // return await API.patch(`${this.baseUrl}${id}/${property}`, this.authHeaders, value);
+        return await API.patch(`${this.baseUrl}${id}/${property}`, this.authHeaders, value);
+    }
+    async getProperty(id, property) {
+        return await API.get(`${this.baseUrl}${id}/${property}`, this.authHeaders);
     }
 }

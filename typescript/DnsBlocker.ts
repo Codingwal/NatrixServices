@@ -1,10 +1,11 @@
-import { ListRenderer } from "./ListRenderer.js"
+import { ListRenderer } from "./Utility/ListRenderer.js"
 import { BlockingState, DeviceConfig, FilterConfig, FilterReference } from "./Data.js";
 import { deviceConfigTemplate, filterReferenceTemplate } from "./Templates.js";
-import { ListController } from "./ListController.js";
+import { ListController } from "./Utility/ListController.js";
 import { API, ListAPI } from "./Utility/API.js";
 import { hash } from "./Utility/Hash.js";
 import { genAppleConfig } from "./ConfigGenerator.js";
+import { downloadFile } from "./Utility/Utility.js";
 
 const username = sessionStorage.getItem("username")!;
 const password = sessionStorage.getItem("password")!;
@@ -85,27 +86,27 @@ if (filterController.items.length == 0) {
     });
 }
 
-async function handleDeviceButton(item: DeviceConfig, index: number, action: string): Promise<void> {
+async function handleDeviceButton(device: DeviceConfig, index: number, action: string): Promise<void> {
     if (action === "enable") {
-        item.enableBlocking = !item.enableBlocking;
-        const newState: Partial<BlockingState> = { enabled: item.enableBlocking };
-        await deviceController.api.setProperty(item.id, "blocking-state", newState);
+        device.enableBlocking = !device.enableBlocking;
+        const newState: Partial<BlockingState> = { enabled: device.enableBlocking };
+        await deviceController.api.setProperty(device.id, "blocking-state", newState);
         deviceController.render();
     }
     else if (action === "delete")
-        await deviceController.removeItem(item.id);
+        await deviceController.removeItem(device.id);
     else if (action === "genConfig") {
-        const url = "";
+        const url = `https://${document.location.hostname}/dns-query/${username}/${device.id}`;
         const config = genAppleConfig(url);
-        // TODO: Download file
+        downloadFile("dnsblocker.mobileconfig", config);
     }
 }
 
-async function handleFilterButton(item: FilterReference, index: number, action: string): Promise<void> {
+async function handleFilterButton(filter: FilterReference, index: number, action: string): Promise<void> {
     if (action === "enable") {
-        item.enableBlocking = !item.enableBlocking;
-        const newState: Partial<BlockingState> = { enabled: item.enableBlocking };
-        await filterController.api.setProperty(item.id, "blocking-state", newState);
+        filter.enableBlocking = !filter.enableBlocking;
+        const newState: Partial<BlockingState> = { enabled: filter.enableBlocking };
+        await filterController.api.setProperty(filter.id, "blocking-state", newState);
         filterController.render();
     }
 }

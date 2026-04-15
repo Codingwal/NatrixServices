@@ -9,3 +9,5 @@ Examples/DnsBlocker/dnsLookup.sh
 data/
 
 out/
+
+wwwroot/dist/

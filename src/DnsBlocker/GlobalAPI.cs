@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -84,5 +85,5 @@ public class GlobalFilterAPI(DataContext DataContext) : ListAPI<FilterConfigDTO>
         return null;
     }
 
-    protected override string? PatchItemProperty(string property, FilterConfigDTO obj, object newData) => "Invalid property";
+    protected override string? PatchItemProperty(string property, FilterConfigDTO obj, JsonElement newData) => "Invalid property";
 }

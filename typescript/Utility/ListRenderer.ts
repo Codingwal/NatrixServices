@@ -1,5 +1,3 @@
-import { listElementTemplate } from "./Templates.js";
-
 export interface ListRendererOptions<T> {
     container: HTMLElement;
     template: (item: T) => string;
@@ -43,3 +41,9 @@ export class ListRenderer<T> {
         this.options.buttonHandler(item, index, action);
     }
 }
+
+const listElementTemplate = (index: number, htmlContent: string) =>
+    /* html */ `
+    <div data-index=${index} class="listElement">
+        ${htmlContent}
+    </div>`;

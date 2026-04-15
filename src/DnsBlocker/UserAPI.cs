@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 
 namespace NatrixServices.DnsBlocker;
@@ -66,13 +67,14 @@ public class UserDeviceAPI(DataContext DataContext) : ListAPI<DeviceConfigDTO>("
         return null;
     }
 
-    protected override string? PatchItemProperty(string property, DeviceConfigDTO obj, object newData)
+    protected override string? PatchItemProperty(string property, DeviceConfigDTO obj, JsonElement jsonData)
     {
         if (property == "blocking-state")
         {
-            if (newData is not BlockingStateDTO blockingState)
+            if (!TryAs<BlockingStateDTO>(jsonData, out var blockingState))
                 return "Expected blocking state";
             obj.EnableBlocking = blockingState.Enabled;
+            return null;
         }
         return "Invalid property";
     }
@@ -101,13 +103,14 @@ public class UserFilterAPI(DataContext DataContext) : ListAPI<FilterReferenceDTO
         return null;
     }
 
-    protected override string? PatchItemProperty(string property, FilterReferenceDTO obj, object newData)
+    protected override string? PatchItemProperty(string property, FilterReferenceDTO obj, JsonElement jsonData)
     {
         if (property == "blocking-state")
         {
-            if (newData is not BlockingStateDTO blockingState)
+            if (!TryAs<BlockingStateDTO>(jsonData, out var blockingState))
                 return "Expected blocking state";
             obj.EnableBlocking = blockingState.Enabled;
+            return null;
         }
         return "Invalid property";
     }

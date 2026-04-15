@@ -21,16 +21,16 @@ public class DnsBlockerService(IServiceProvider ServiceProvider, ILogger<DnsBloc
 
     private async Task OnQueryReceived(object sender, QueryReceivedEventArgs e)
     {
+        if (e.Query is not DnsMessage query) return;
+
+        using IServiceScope scope = ServiceProvider.CreateScope();
+        var dataContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+
+        DnsBlocker dnsBlocker = new(Logger, dataContext);
+
         try
         {
-            if (e.Query is not DnsMessage query) return;
-
-            var dataContext = ServiceProvider.GetRequiredService<DataContext>();
-
-            DnsBlocker dnsBlocker = new(Logger, dataContext);
             e.Response = await dnsBlocker.ProcessDnsQuery(query, null, null);
-
-            Logger.LogInformation("Finished handling dns request");
         }
         catch (Exception exception)
         {
@@ -58,8 +58,6 @@ public class DnsBlocker(ILogger Logger, DataContext DataContext)
         // Get the domain which ip is requested
         DnsQuestion question = query.Questions[0];
         string domainName = question.Name.ToString();
-
-        Logger.LogInformation($"Handling request to {domainName}");
 
         // Block or forward the DNS request
         DnsMessage response = query.CreateResponseInstance();

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 
 namespace NatrixServices;
@@ -63,7 +65,7 @@ public abstract class ListAPI<T>(string BaseUrl) : ControllerBase where T : clas
     }
 
     [HttpPatch("{itemId}/{property}")]
-    public virtual async Task<IActionResult> PatchItemProperty(string itemId, string property, [FromBody] object newData)
+    public virtual async Task<IActionResult> PatchItemProperty(string itemId, string property, [FromBody] JsonElement newData)
     {
         var data = await GetData();
         if (data == null) return NotFound();
@@ -81,8 +83,23 @@ public abstract class ListAPI<T>(string BaseUrl) : ControllerBase where T : clas
         return Ok(obj);
     }
 
+    protected static bool TryAs<TObj>(JsonElement jsonElement, [NotNullWhen(true)] out TObj? obj)
+    {
+        try
+        {
+            obj = jsonElement.Deserialize<TObj>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (obj == null) return false;
+            return true;
+        }
+        catch
+        {
+            obj = default;
+            return false;
+        }
+    }
+
     protected abstract Task<Dictionary<string, T>?> GetData();
     protected abstract Task SaveChanges();
-    protected abstract string? PatchItemProperty(string property, T obj, object newData);
+    protected abstract string? PatchItemProperty(string property, T obj, JsonElement jsonData);
     protected abstract object? GetItemProperty(string property, T obj, out string? error);
 }

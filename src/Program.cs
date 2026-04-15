@@ -24,11 +24,11 @@ public static class Program
         builder.Services.AddControllers();
 
         builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
+        builder.Services.AddDbContext<Chess.DataContext>(options => options.UseSqlite("Data Source=data/chess/data.db"));
+        builder.Services.AddDbContext<Users.DataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
         builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
 
-        builder.Services.AddDbContext<Chess.DataContext>(options => options.UseSqlite("Data Source=data/chess/data.db"));
 
-        builder.Services.AddDbContext<Users.DataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
 
         WebApplication app = builder.Build();
 

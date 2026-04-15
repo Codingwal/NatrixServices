@@ -1,6 +1,6 @@
-import { ListAPI } from "./Utility/API";
+import { ListAPI } from "./API";
 import { ListRenderer } from "./ListRenderer";
-import { FilteredKeysOf } from "./Utility/Utility";
+import { FilteredKeysOf } from "./Utility";
 
 export class ListController<T> {
     public items: T[] = [];

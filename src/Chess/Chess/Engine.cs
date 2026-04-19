@@ -2,118 +2,22 @@ namespace NatrixServices.Chess;
 
 public partial class ChessEngine(ChessGame Game)
 {
-    public string? DoMove(Move move, out char? result)
+    public char? CheckResult()
     {
-        result = null;
-
-        // Check if the move is valid
-        string? error = CheckMove(move);
-        if (error != null) return error;
-
-        // Get move info before executing it
-        char piece = GetPiece(move.Origin);
-        Players player = GetPlayer(piece);
-        char capturedPiece = GetPiece(move.Destination);
-
-        // Update the board
-        SetField(move.Destination, piece);
-        SetField(move.Origin, ' ');
-
-        // Handle en passant capture
-        if (char.ToLower(piece) == 'p' && move.Destination == Game.EnPassantTarget)
-        {
-            Int2 capturedPawnPos = move.Destination + new Int2(0, (player == Players.White) ? -1 : 1);
-            capturedPiece = GetPiece(capturedPawnPos);
-            SetField(capturedPawnPos, ' ');
-        }
-
-        // Handle promotion
-        if (move.Promotion != null)
-        {
-            if (player == Players.White)
-                SetField(move.Destination, char.ToUpper(move.Promotion.Value));
-            else
-                SetField(move.Destination, char.ToLower(move.Promotion.Value));
-        }
-
-        // Handle castling
-        if (char.ToLower(piece) == 'k' && Math.Abs(move.Destination.x - move.Origin.x) == 2)
-        {
-            int y = (player == Players.White) ? 0 : 7;
-            if (move.Destination.x == 6) // Kingside
-            {
-                SetField(new Int2(5, y), GetPiece(new Int2(7, y)));
-                SetField(new Int2(7, y), ' ');
-            }
-            else // Queenside
-            {
-                SetField(new Int2(3, y), GetPiece(new Int2(0, y)));
-                SetField(new Int2(0, y), ' ');
-            }
-        }
-
-        // Switch player
-        Game.NextPlayer = OtherPlayer(Game.NextPlayer);
-
-        UpdateCastlingRights(move, piece);
-
-        // Update en passant target
-        if (char.ToLower(piece) == 'p' && Math.Abs(move.Destination.y - move.Origin.y) == 2)
-            Game.EnPassantTarget = move.Origin + new Int2(0, (player == Players.White) ? 1 : -1);
-        else
-            Game.EnPassantTarget = null;
-
-        // Update the half move clock (reset if a pawn moved or a piece was captured)
-        if (capturedPiece != ' ' || char.ToLower(piece) == 'p')
-            Game.HalfMovesSinceAction = 0;
-        else
-            Game.HalfMovesSinceAction++;
-
         // Handle fifty-move rule
         if (Game.HalfMovesSinceAction >= 100)
-            result = 'd';
-
-        // MoveCount starts at 1 and is incremented after Black's move
-        if (player == Players.Black)
-            Game.MoveCount++;
+            return 'd';
 
         // Handle checkmate and draw because of no moves
         if (GetAllowedMoves().Count == 0)
         {
             if (InCheck(Game.NextPlayer))
-                result = (Game.NextPlayer == Players.White) ? 'b' : 'w';
+                return (Game.NextPlayer == Players.White) ? 'b' : 'w';
             else
-                result = 'd';
+                return 'd';
         }
 
         return null;
-    }
-    private void UpdateCastlingRights(Move move, char piece)
-    {
-        if (piece == 'K')
-        {
-            Game.CastleKingWhite = false;
-            Game.CastleQueenWhite = false;
-        }
-        else if (piece == 'R')
-        {
-            if (move.Origin == new Int2(0, 0))
-                Game.CastleQueenWhite = false;
-            else if (move.Origin == new Int2(7, 0))
-                Game.CastleKingWhite = false;
-        }
-        else if (piece == 'k')
-        {
-            Game.CastleKingBlack = false;
-            Game.CastleQueenBlack = false;
-        }
-        else if (piece == 'r')
-        {
-            if (move.Origin == new Int2(0, 7))
-                Game.CastleQueenBlack = false;
-            else if (move.Origin == new Int2(7, 7))
-                Game.CastleKingBlack = false;
-        }
     }
 
     public string? CheckMove(Move move)

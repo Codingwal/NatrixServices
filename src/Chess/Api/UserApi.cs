@@ -1,37 +1,36 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices.Chess;
 
+public class UserNotFoundException() : Exception("User not found");
+
 [ApiController]
 [Route("api/chess/users")]
-public class UserApi(DataContext DataContext, Users.DataContext UserDataContext) : ControllerBase
+public class UserApi(UserDataContext DataContext, Users.DataContext UserDataContext, IGameManager GameManager) : ControllerBase
 {
     [HttpGet("{username}")]
     public async Task<IActionResult> GetUserData(string username)
     {
-        if (!await UserDataContext.UserExists(username)) return NotFound();
+        if (!await UserDataContext.UserExists(username)) throw new UserNotFoundException();
 
-        var userData = await DataContext.GetUserData(username);
+        var userData = await DataContext.GetOrCreateUserAsync(username);
         return Ok(new UserDataDTO(userData));
     }
 
     [HttpGet("{username}/games")]
     [HeaderAuth]
-    public async Task<IActionResult> GetUserGames(string username)
+    public async Task<IActionResult> GetUserGames(string username, [FromQuery] string? status = null)
     {
-        List<GameDataDTO> games = await DataContext.GameData
-            .Where(g => g.Player1 == username || g.Player2 == username).ToListAsync();
-
+        List<GameData> games = await GameManager.GetGamesAsync(onlyPublic: false, status, username);
         return Ok(new GameListDTO(games));
     }
 
     [HttpGet("{username}/stats")]
     public async Task<IActionResult> GetUserStats(string username)
     {
-        if (!await UserDataContext.UserExists(username)) return NotFound();
+        if (!await UserDataContext.UserExists(username)) throw new UserNotFoundException();
 
-        var userData = await DataContext.GetUserData(username);
+        var userData = await DataContext.GetOrCreateUserAsync(username);
         return Ok(userData.Stats);
     }
 }

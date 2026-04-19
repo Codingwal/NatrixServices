@@ -144,4 +144,118 @@ public partial class ChessGame
         });
         return count;
     }
+
+    public void DoMove(Move move)
+    {
+        // Get move info before executing it
+        char piece = GetPiece(move.Origin);
+        Players player = GetPlayer(piece);
+        char capturedPiece = GetPiece(move.Destination);
+
+        // Update the board
+        SetField(move.Destination, piece);
+        SetField(move.Origin, ' ');
+
+        // Handle en passant capture
+        if (char.ToLower(piece) == 'p' && move.Destination == EnPassantTarget)
+        {
+            Int2 capturedPawnPos = move.Destination + new Int2(0, (player == Players.White) ? -1 : 1);
+            capturedPiece = GetPiece(capturedPawnPos);
+            SetField(capturedPawnPos, ' ');
+        }
+
+        // Handle promotion
+        if (move.Promotion != null)
+        {
+            if (player == Players.White)
+                SetField(move.Destination, char.ToUpper(move.Promotion.Value));
+            else
+                SetField(move.Destination, char.ToLower(move.Promotion.Value));
+        }
+
+        // Handle castling
+        if (char.ToLower(piece) == 'k' && Math.Abs(move.Destination.x - move.Origin.x) == 2)
+        {
+            int y = (player == Players.White) ? 0 : 7;
+            if (move.Destination.x == 6) // Kingside
+            {
+                SetField(new Int2(5, y), GetPiece(new Int2(7, y)));
+                SetField(new Int2(7, y), ' ');
+            }
+            else // Queenside
+            {
+                SetField(new Int2(3, y), GetPiece(new Int2(0, y)));
+                SetField(new Int2(0, y), ' ');
+            }
+        }
+
+        // Switch player
+        NextPlayer = NextPlayer == Players.White ? Players.Black : Players.White;
+
+        UpdateCastlingRights(move, piece);
+
+        // Update en passant target
+        if (char.ToLower(piece) == 'p' && Math.Abs(move.Destination.y - move.Origin.y) == 2)
+            EnPassantTarget = move.Origin + new Int2(0, (player == Players.White) ? 1 : -1);
+        else
+            EnPassantTarget = null;
+
+        // Update the half move clock (reset if a pawn moved or a piece was captured)
+        if (capturedPiece != ' ' || char.ToLower(piece) == 'p')
+            HalfMovesSinceAction = 0;
+        else
+            HalfMovesSinceAction++;
+
+        // MoveCount starts at 1 and is incremented after Black's move
+        if (player == Players.Black)
+            MoveCount++;
+    }
+
+    private void UpdateCastlingRights(Move move, char piece)
+    {
+        if (piece == 'K')
+        {
+            CastleKingWhite = false;
+            CastleQueenWhite = false;
+        }
+        else if (piece == 'R')
+        {
+            if (move.Origin == new Int2(0, 0))
+                CastleQueenWhite = false;
+            else if (move.Origin == new Int2(7, 0))
+                CastleKingWhite = false;
+        }
+        else if (piece == 'k')
+        {
+            CastleKingBlack = false;
+            CastleQueenBlack = false;
+        }
+        else if (piece == 'r')
+        {
+            if (move.Origin == new Int2(0, 7))
+                CastleQueenBlack = false;
+            else if (move.Origin == new Int2(7, 7))
+                CastleKingBlack = false;
+        }
+    }
+
+    private char GetPiece(Int2 pos)
+    {
+        return Fields[pos.x, pos.y];
+    }
+    private bool IsEmpty(Int2 pos)
+    {
+        return GetPiece(pos) == ' ';
+    }
+    private void SetField(Int2 pos, char piece)
+    {
+        Fields[pos.x, pos.y] = piece;
+    }
+    private static Players GetPlayer(char field)
+    {
+        if (field == ' ')
+            return Players.None;
+
+        return char.IsUpper(field) ? Players.White : Players.Black;
+    }
 }

@@ -61,7 +61,7 @@ public class UserStatsDTO
         return GamesPlayed != 0 ? (double)totalValue / GamesPlayed : 0;
     }
 
-    public void UpdateStats(GameDataDTO gameData, Players player)
+    public void UpdateStats(GameData gameData, Players player)
     {
         ChessGame game = new(gameData.Fen);
 
@@ -105,34 +105,31 @@ public class UserStatsDTO
     }
 }
 
-public class GameDataDTO
+public record GameDataDTO(
+    GameId GameId,
+    string Name,
+    bool IsPublic,
+    string? Player1,
+    string? Player2,
+    TimeSpan TimePerPlayer,
+    TimeSpan TimeLeft1,
+    TimeSpan TimeLeft2,
+    string Fen,
+    char? Result
+)
 {
-    [Key, Required, StringLength(8)]
-    public GameId GameId { get; set; } = GameId.Empty;
-    public bool IsPublic { get; set; } = false;
-
-    public string? Player1 { get; set; } = null;
-    public string? Player2 { get; set; } = null;
-
-    public TimeSpan TimePerPlayer { get; set; }
-    public TimeSpan TimeLeft1 { get; set; }
-    public TimeSpan TimeLeft2 { get; set; }
-    public DateTimeOffset LastMoveTime { get; set; } = default;
-
-    public string Fen { get; set; } = string.Empty;
-    public List<MoveDTO> Moves { get; set; } = [];
-
-    public char? Result { get; set; } = null; // optional. 'w' => white won, 'b' => black won, 'd' => draw
-
-    public GameDataDTO() { }
-    public GameDataDTO(GameId gameId, bool isPublic, int timePerPlayer, string fen)
+    public GameDataDTO(GameData data) : this(
+        data.GameId,
+        data.Name,
+        data.IsPublic,
+        data.Player1,
+        data.Player2,
+        data.TimePerPlayer,
+        data.TimeLeft1,
+        data.TimeLeft2,
+        data.Fen,
+        data.Result)
     {
-        GameId = gameId;
-        IsPublic = isPublic;
-        TimePerPlayer = TimeSpan.FromMinutes(timePerPlayer);
-        TimeLeft1 = TimePerPlayer;
-        TimeLeft2 = TimePerPlayer;
-        Fen = fen;
     }
 }
 
@@ -189,7 +186,13 @@ public record MoveDTO
     }
 }
 
-public record GameListDTO(List<GameDataDTO> Games);
+public record GameListDTO(List<GameDataDTO> Games)
+{
+    public GameListDTO(List<GameData> games) : this(
+        games.Select(g => new GameDataDTO(g)).ToList()
+    )
+    { }
+};
 public record MoveListDTO
 {
     public List<MoveDTO> Moves = [];

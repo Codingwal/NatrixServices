@@ -23,10 +23,6 @@ public partial class ChessEngine
     {
         return GetPiece(pos) == ' ';
     }
-    private void SetField(Int2 pos, char piece)
-    {
-        Game.Fields[pos.x, pos.y] = piece;
-    }
 
     /* Int2 helper methods */
     private static Int2 GetDirection(Int2 from, Int2 to)

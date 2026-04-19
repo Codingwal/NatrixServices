@@ -1,1 +1,1 @@
-scp bin/Release/net10.0/linux-x64/publish/NatrixServices opc@natrixServices:~/NatrixServices/NatrixServices
+scp bin/Release/net10.0/publish/NatrixServices.dll mc-server:~/natrixServices/NatrixServices.dll

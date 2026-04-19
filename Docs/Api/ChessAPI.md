@@ -1,6 +1,6 @@
 # Chess API
 
-``` api/chess/... `
+` api/chess/... `
 
 ## Structures
 
@@ -8,12 +8,17 @@ GameData:
 ```
 {
     "gameId": <GameId>,
+    "name": <string>,
+
     "isPublic": <Bool>,
 
     "player1": <Username?>,
     "player2": <Username?>,
-    "timeLeft1": <int>, // In minutes
-    "timeLeft2": <int>, // In minutes
+
+    // In minutes
+    "timePerPlayer": <TimeSpan>,
+    "timeLeft1": <TimeSpan>,
+    "timeLeft2": <TimeSpan>,
 
     "fen": <string>, // Forsyth-Edwards-Notation
 
@@ -67,6 +72,8 @@ Move:
 }
 ```
 
+GameStatus: `"active" | "done" | "scheduled" | "waiting"`
+
 
 ## Game API
 
@@ -78,10 +85,11 @@ Move:
     * Returns: `{ "moves": [<Move>, <Move>, ...] }`
 * GET `games/<GameId>/allowed-moves?field=<string?>`
     * Returns: `{ "moves": [<Move>, <Move>, ...] }`
-* GET `games?onlyActive=<Bool?>&username=<string?>`
+* GET `games?status=<GameStatus?>&username=<string?>`
     * Returns: `{ "games": [<GameData>, <GameData>, ...] }`
 * POST `games`
-    * Body: `{ "isPublic": <Bool>, "timePerPlayer": <int> }`
+    * Body: `{ "name": <string>, "isPublic": <Bool>, "timePerPlayer": <int> }`
+    * Returns: `{ "gameId": <GameId> }`
 * POST `games/<GameId>/players`
     * **Header Auth**
 * POST `games/<GameId>/moves`
@@ -93,7 +101,7 @@ Move:
 ## User API
 * GET `users/<Username>`
     * Returns: `<UserData>`
-* GET `users/<Username>/games`
+* GET `users/<Username>/games?status=<GameStatus?>`
     * **Header Auth**
     * Returns: `{ "games": [<GameData>, <GameData>, ...] }`
 * GET `users/<Username>/stats`

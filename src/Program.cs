@@ -24,9 +24,12 @@ public static class Program
         builder.Services.AddControllers();
 
         builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
-        builder.Services.AddDbContext<Chess.DataContext>(options => options.UseSqlite("Data Source=data/chess/data.db"));
-        builder.Services.AddDbContext<Users.DataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
         builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
+
+        builder.Services.AddDbContext<Chess.Data.GameDataContext>(options => options.UseSqlite("Data Source=data/chess/games.db"));
+        builder.Services.AddDbContext<Chess.Data.UserDataContext>(options => options.UseSqlite("Data Source=data/chess/users.db"));
+
+        builder.Services.AddDbContext<Users.DataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
 
 
 
@@ -51,7 +54,8 @@ public static class Program
             scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
 
             Directory.CreateDirectory("data/chess");
-            scope.ServiceProvider.GetRequiredService<Chess.DataContext>().Init();
+            scope.ServiceProvider.GetRequiredService<Chess.Data.GameDataContext>().Init();
+            scope.ServiceProvider.GetRequiredService<Chess.Data.UserDataContext>().Init();
 
             Directory.CreateDirectory("data/users");
             scope.ServiceProvider.GetRequiredService<Users.DataContext>().Init();

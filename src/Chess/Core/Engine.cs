@@ -1,4 +1,4 @@
-namespace NatrixServices.Chess;
+namespace NatrixServices.Chess.Core;
 
 public partial class ChessEngine(ChessGame Game)
 {

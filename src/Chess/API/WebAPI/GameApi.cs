@@ -1,7 +1,10 @@
-global using GameId = string;
 using Microsoft.AspNetCore.Mvc;
+using NatrixServices.Chess.Core;
+using NatrixServices.Chess.Data;
+using NatrixServices.Chess.Management;
+using NatrixServices.Users;
 
-namespace NatrixServices.Chess;
+namespace NatrixServices.Chess.API;
 
 [ApiController]
 [Route("api/chess/games")]

@@ -1,7 +1,9 @@
-using System.ComponentModel.DataAnnotations;
-using Microsoft.EntityFrameworkCore;
+global using GameId = string;
 
-namespace NatrixServices.Chess;
+using System.ComponentModel.DataAnnotations;
+using NatrixServices.Chess.Core;
+
+namespace NatrixServices.Chess.Data;
 
 public class GameData
 {
@@ -34,33 +36,5 @@ public class GameData
         TimeLeft1 = TimePerPlayer;
         TimeLeft2 = TimePerPlayer;
         Fen = fen;
-    }
-}
-
-public class GameDataContext(DbContextOptions<GameDataContext> options) : DbContext(options)
-{
-    public DbSet<GameData> GameData => Set<GameData>();
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<GameData>(b =>
-        {
-            b.Property(g => g.Moves).SaveAsJson();
-        });
-    }
-
-    public async Task<GameData?> GetGameDataAsync(GameId gameId)
-    {
-        GameData? gameData = await GameData.FindAsync(gameId);
-        return gameData;
-    }
-    public async Task<List<GameData>> GetAllGamesAsync()
-    {
-        return await GameData.ToListAsync();
-    }
-    public async Task AddGameDataAsync(GameData gameData)
-    {
-        await GameData.AddAsync(gameData);
-        await SaveChangesAsync();
     }
 }

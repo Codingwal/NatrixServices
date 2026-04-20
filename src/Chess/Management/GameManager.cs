@@ -1,4 +1,7 @@
-namespace NatrixServices.Chess;
+using NatrixServices.Chess.Core;
+using NatrixServices.Chess.Data;
+
+namespace NatrixServices.Chess.Management;
 
 public class GameNotFoundException() : Exception("Game not found");
 public class GameFullException() : Exception("Game is full");

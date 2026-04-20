@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using NatrixServices.Chess.Data;
+using NatrixServices.Chess.Management;
+using NatrixServices.Users;
 
-namespace NatrixServices.Chess;
+namespace NatrixServices.Chess.API;
 
 public class UserNotFoundException() : Exception("User not found");
 

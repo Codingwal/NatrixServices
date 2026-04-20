@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NatrixServices.Users;
 
 namespace NatrixServices.DnsBlocker;
 

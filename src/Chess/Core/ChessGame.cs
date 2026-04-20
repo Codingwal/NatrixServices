@@ -1,4 +1,4 @@
-namespace NatrixServices.Chess;
+namespace NatrixServices.Chess.Core;
 
 public enum Players
 {

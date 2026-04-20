@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using NatrixServices.Chess.Core;
+using NatrixServices.Chess.Data;
 
-namespace NatrixServices.Chess;
+namespace NatrixServices.Chess.API;
 
 public class UserStatsDTO
 {

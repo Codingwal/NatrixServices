@@ -24,7 +24,7 @@ public static class Auth
     }
     public static string Password { get; } = "admin";
 
-    public static bool AuthenticateUser(HttpRequest request, Users.DataContext dataContext)
+    public static async Task<bool> AuthenticateUserAsync(HttpRequest request, UserDataContext dataContext)
     {
         string? username = request.Headers["username"];
         string? passwordHash = request.Headers["passwordHash"];
@@ -32,7 +32,7 @@ public static class Auth
         if (username == null || passwordHash == null)
             return false;
 
-        return dataContext.Authenticate(username, passwordHash);
+        return await dataContext.AuthenticateAsync(username, passwordHash);
     }
 }
 
@@ -58,12 +58,14 @@ public class AdminOnlyAttribute : ActionFilterAttribute
 
 public class HeaderAuthAttribute : ActionFilterAttribute
 {
-    public override void OnActionExecuting(ActionExecutingContext context)
+    public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         IServiceProvider serviceProvider = context.HttpContext.RequestServices;
-        Users.DataContext dataContext = serviceProvider.GetRequiredService<Users.DataContext>();
+        var dataContext = serviceProvider.GetRequiredService<UserDataContext>();
 
-        if (!Auth.AuthenticateUser(context.HttpContext.Request, dataContext))
+        if (!await Auth.AuthenticateUserAsync(context.HttpContext.Request, dataContext))
             context.Result = new UnauthorizedResult();
+
+        await base.OnActionExecutionAsync(context, next);
     }
 }

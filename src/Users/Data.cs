@@ -1,23 +1,29 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices.Users;
 
-public class DataContext(DbContextOptions<DataContext> options) : DataContext<UserData, GlobalData>(options)
+public class UserDataContext(DbContextOptions<UserDataContext> options) : DatabaseItemStorage<UserData, string>(options)
 {
-    public async Task<bool> UserExists(string username) => await UserData.AnyAsync(u => u.Username == username);
-    public bool Authenticate(string username, string passwordHash)
+    public async Task<bool> UserExistsAsync(string username) => await ItemExistsAsync(username);
+    public async Task<bool> AuthenticateAsync(string username, string passwordHash)
     {
-        UserData? userData = UserData.Find(username);
+        UserData? userData = await GetItemAsync(username);
         if (userData == null) return false;
 
         return userData.PasswordHash == passwordHash;
     }
 }
 
-public class UserData : UserDataBase
+public class UserData : IIdentifiable<string>
 {
+    [Key, Required, StringLength(8)]
+    public string Username { get; set; } = string.Empty;
+
     public string PasswordHash { get; set; } = string.Empty;
     public string LinkedAccount { get; set; } = string.Empty; // Not used yet
+
+    public string Id { get => Username; set => Username = value; }
 }
 public class GlobalData
 {

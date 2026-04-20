@@ -29,7 +29,7 @@ public static class Program
         builder.Services.AddDbContext<Chess.Data.GameDataContext>(options => options.UseSqlite("Data Source=data/chess/games.db"));
         builder.Services.AddDbContext<Chess.Data.UserDataContext>(options => options.UseSqlite("Data Source=data/chess/users.db"));
 
-        builder.Services.AddDbContext<Users.DataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
+        builder.Services.AddDbContext<Users.UserDataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
 
 
 
@@ -58,7 +58,7 @@ public static class Program
             await scope.ServiceProvider.GetRequiredService<Chess.Data.UserDataContext>().InitAsync();
 
             Directory.CreateDirectory("data/users");
-            scope.ServiceProvider.GetRequiredService<Users.DataContext>().Init();
+            await scope.ServiceProvider.GetRequiredService<Users.UserDataContext>().InitAsync();
         }
 
         app.MapControllers();

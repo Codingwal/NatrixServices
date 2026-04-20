@@ -2,15 +2,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace NatrixServices;
 
-public interface IIdentifiable<TId>
+public interface IIdentifiable<TId> where TId : notnull
 {
     TId Id { get; set; }
 }
 
-public interface IItemStorage<TItem, TId> where TItem : IIdentifiable<TId>
+public interface IItemStorage<TItem, TId>
+    where TItem : IIdentifiable<TId>
+    where TId : notnull
 {
     Task InitAsync();
     Task SaveChangesAsync();
+
+    Task<bool> ItemExistsAsync(TId id);
 
     Task<TItem> GetItemAsync(TId id);
     Task<TItem> GetOrCreateItemAsync(TId id);
@@ -22,11 +26,14 @@ public interface IItemStorage<TItem, TId> where TItem : IIdentifiable<TId>
 
 public class DatabaseItemStorage<TItem, TId>(DbContextOptions options) : DbContext(options), IItemStorage<TItem, TId>
     where TItem : class, IIdentifiable<TId>, new()
+    where TId : notnull
 {
     private DbSet<TItem> Items => Set<TItem>();
 
     public async Task InitAsync() => await Database.EnsureCreatedAsync();
     public async Task SaveChangesAsync() => await base.SaveChangesAsync();
+
+    public async Task<bool> ItemExistsAsync(TId id) => await Items.AnyAsync(i => id.Equals(i.Id));
 
     public async Task<TItem> GetItemAsync(TId id)
     {

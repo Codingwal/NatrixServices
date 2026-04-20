@@ -8,6 +8,7 @@ public class GameFullException() : Exception("Game is full");
 public class GameFinishedException() : Exception("Game is already finished");
 public class GameNotStartedException() : Exception("Still waiting for players");
 public class NotParticipantException() : Exception("You are not a participant of this game");
+public class AlreadyGameParticipantException() : Exception("You are already a participant of this game");
 public class InvalidMoveException(string message) : Exception(message);
 
 public interface IGameManager
@@ -20,17 +21,17 @@ public interface IGameManager
     Task DoMoveAsync(GameId gameId, Move move, string username);
 }
 
-public class GameManager(IItemStorage<GameData, GameId> DataContext) : IGameManager
+public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameManager
 {
     public async Task<GameData> GetGameDataAsync(GameId gameId)
     {
-        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
+        GameData gameData = await GameStorage.GetItemAsync(gameId) ?? throw new GameNotFoundException();
         return gameData;
     }
 
     public async Task<List<GameData>> GetGamesAsync(bool onlyPublic, string? filter = null, string? username = null)
     {
-        List<GameData> games = await DataContext.GetAllItemsAsync();
+        List<GameData> games = await GameStorage.GetAllItemsAsync();
 
         if (onlyPublic)
             games = games.Where(g => g.IsPublic).ToList();
@@ -56,7 +57,7 @@ public class GameManager(IItemStorage<GameData, GameId> DataContext) : IGameMana
 
     public async Task<List<Move>> GetAllowedMovesAsync(GameId gameId, string? field = null)
     {
-        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
+        GameData gameData = await GetGameDataAsync(gameId);
 
         ChessGame game = new(gameData.Fen);
         ChessEngine engine = new(game);
@@ -74,13 +75,16 @@ public class GameManager(IItemStorage<GameData, GameId> DataContext) : IGameMana
     {
         GameId gameId = Utility.GenerateId();
         GameData gameData = new(gameId, name, isPublic, timePerPlayer, ChessGame.DefaultFen);
-        await DataContext.AddItemAsync(gameData);
+        await GameStorage.AddItemAsync(gameData);
         return gameId;
     }
 
     public async Task JoinGameAsync(string username, GameId gameId)
     {
-        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
+        GameData gameData = await GetGameDataAsync(gameId);
+
+        if (gameData.Player1 == username || gameData.Player2 == username)
+            throw new AlreadyGameParticipantException();
 
         if (gameData.Player1 == null)
             gameData.Player1 = username;
@@ -89,12 +93,12 @@ public class GameManager(IItemStorage<GameData, GameId> DataContext) : IGameMana
         else
             throw new GameFullException();
 
-        await DataContext.SaveChangesAsync();
+        await GameStorage.UpdateItemAsync(gameData);
     }
 
     public async Task DoMoveAsync(GameId gameId, Move move, string username)
     {
-        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
+        GameData gameData = await GetGameDataAsync(gameId);
 
         if (gameData.Result != null)
             throw new GameFinishedException();
@@ -147,6 +151,6 @@ public class GameManager(IItemStorage<GameData, GameId> DataContext) : IGameMana
         gameData.LastMoveTime = DateTimeOffset.UtcNow;
         gameData.Moves.Add(move);
         gameData.Fen = game.ToFen();
-        await DataContext.SaveChangesAsync();
+        await GameStorage.UpdateItemAsync(gameData);
     }
 }

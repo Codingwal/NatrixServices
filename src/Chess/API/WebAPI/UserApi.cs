@@ -9,14 +9,14 @@ public class UserNotFoundException() : Exception("User not found");
 
 [ApiController]
 [Route("api/chess/users")]
-public class UserApi(IItemStorage<Data.UserData, string> DataContext, IItemStorage<Users.UserData, string> UserDataContext, IGameManager GameManager) : ControllerBase
+public class UserApi(IItemStorage<Data.UserData, string> UserDataStorage, IItemStorage<Users.UserData, string> UserStorage, IGameManager GameManager) : ControllerBase
 {
     [HttpGet("{username}")]
     public async Task<IActionResult> GetUserData(string username)
     {
-        if (!await UserDataContext.ItemExistsAsync(username)) throw new UserNotFoundException();
+        if (!await UserStorage.ItemExistsAsync(username)) throw new UserNotFoundException();
 
-        var userData = await DataContext.GetOrCreateItemAsync(username);
+        var userData = await UserDataStorage.GetOrCreateItemAsync(username);
         return Ok(new UserDataDTO(userData));
     }
 
@@ -31,9 +31,9 @@ public class UserApi(IItemStorage<Data.UserData, string> DataContext, IItemStora
     [HttpGet("{username}/stats")]
     public async Task<IActionResult> GetUserStats(string username)
     {
-        if (!await UserDataContext.ItemExistsAsync(username)) throw new UserNotFoundException();
+        if (!await UserStorage.ItemExistsAsync(username)) throw new UserNotFoundException();
 
-        var userData = await DataContext.GetOrCreateItemAsync(username);
+        var userData = await UserDataStorage.GetOrCreateItemAsync(username);
         return Ok(userData.Stats);
     }
 }

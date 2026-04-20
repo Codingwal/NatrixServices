@@ -12,7 +12,6 @@ public interface IItemStorage<TItem, TId>
     where TId : notnull
 {
     Task InitAsync();
-    Task SaveChangesAsync();
 
     Task<bool> ItemExistsAsync(TId id);
 
@@ -22,16 +21,18 @@ public interface IItemStorage<TItem, TId>
 
     Task AddItemAsync(TItem item);
     Task DeleteItemAsync(TId id);
+    Task UpdateItemAsync(TItem item);
 }
 
 public class DatabaseItemStorage<TItem, TId>(DbContextOptions options) : DbContext(options), IItemStorage<TItem, TId>
-    where TItem : class, IIdentifiable<TId>, new()
+    where TItem : class, IIdentifiable<TId>
     where TId : notnull
 {
     private DbSet<TItem> Items => Set<TItem>();
 
+    protected virtual TItem? ItemDefaultValue => null;
+
     public async Task InitAsync() => await Database.EnsureCreatedAsync();
-    public async Task SaveChangesAsync() => await base.SaveChangesAsync();
 
     public async Task<bool> ItemExistsAsync(TId id) => await Items.AnyAsync(i => id.Equals(i.Id));
 
@@ -46,7 +47,8 @@ public class DatabaseItemStorage<TItem, TId>(DbContextOptions options) : DbConte
         var item = await Items.FindAsync(id);
         if (item == null)
         {
-            item = new TItem { Id = id };
+            item = ItemDefaultValue ?? throw new InvalidOperationException($"No default value provided.");
+            item.Id = id;
             await Items.AddAsync(item);
             await SaveChangesAsync();
         }
@@ -65,6 +67,15 @@ public class DatabaseItemStorage<TItem, TId>(DbContextOptions options) : DbConte
     {
         var item = await Items.FindAsync(id) ?? throw new KeyNotFoundException($"Item with id {id} not found.");
         Items.Remove(item);
+        await SaveChangesAsync();
+    }
+
+    public async Task UpdateItemAsync(TItem item)
+    {
+        if (!await ItemExistsAsync(item.Id))
+            throw new KeyNotFoundException($"Item with id {item.Id} not found.");
+
+        Items.Update(item);
         await SaveChangesAsync();
     }
 }

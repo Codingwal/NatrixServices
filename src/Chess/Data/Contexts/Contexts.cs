@@ -24,4 +24,19 @@ public class UserDataContext(DbContextOptions<UserDataContext> options) : Databa
             b.Property(u => u.Stats).SaveAsJson();
         });
     }
+
+    protected override UserData? ItemDefaultValue => new();
+}
+
+public class EventDataContext(DbContextOptions<EventDataContext> options) : DatabaseItemStorage<EventData, EventId>(options)
+{
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<EventData>(b =>
+        {
+            b.Property(e => e.Players).SaveAsJson();
+            b.OwnsOne(e => e.Details, b => b.ToJson());
+        });
+    }
 }

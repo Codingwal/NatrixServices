@@ -5,7 +5,7 @@ using NatrixServices.Chess.Core;
 
 namespace NatrixServices.Chess.Data;
 
-public class GameData
+public class GameData : IIdentifiable<GameId>
 {
     [Key, Required, StringLength(8)]
     public GameId GameId { get; set; } = GameId.Empty;
@@ -25,6 +25,7 @@ public class GameData
     public List<Move> Moves { get; set; } = [];
 
     public char? Result { get; set; } = null; // optional. 'w' => white won, 'b' => black won, 'd' => draw
+    public string Id { get => GameId; set => GameId = value; }
 
     public GameData() { }
     public GameData(GameId gameId, string name, bool isPublic, int timePerPlayer, string fen)

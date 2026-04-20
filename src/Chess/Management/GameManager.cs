@@ -20,17 +20,17 @@ public interface IGameManager
     Task DoMoveAsync(GameId gameId, Move move, string username);
 }
 
-public class GameManager(GameDataContext DataContext) : IGameManager
+public class GameManager(IItemStorage<GameData, GameId> DataContext) : IGameManager
 {
     public async Task<GameData> GetGameDataAsync(GameId gameId)
     {
-        GameData? gameData = await DataContext.GetGameDataAsync(gameId) ?? throw new GameNotFoundException();
+        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
         return gameData;
     }
 
     public async Task<List<GameData>> GetGamesAsync(bool onlyPublic, string? filter = null, string? username = null)
     {
-        List<GameData> games = await DataContext.GetAllGamesAsync();
+        List<GameData> games = await DataContext.GetAllItemsAsync();
 
         if (onlyPublic)
             games = games.Where(g => g.IsPublic).ToList();
@@ -56,7 +56,7 @@ public class GameManager(GameDataContext DataContext) : IGameManager
 
     public async Task<List<Move>> GetAllowedMovesAsync(GameId gameId, string? field = null)
     {
-        GameData? gameData = await DataContext.GetGameDataAsync(gameId) ?? throw new GameNotFoundException();
+        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
 
         ChessGame game = new(gameData.Fen);
         ChessEngine engine = new(game);
@@ -74,13 +74,13 @@ public class GameManager(GameDataContext DataContext) : IGameManager
     {
         GameId gameId = Utility.GenerateId();
         GameData gameData = new(gameId, name, isPublic, timePerPlayer, ChessGame.DefaultFen);
-        await DataContext.AddGameDataAsync(gameData);
+        await DataContext.AddItemAsync(gameData);
         return gameId;
     }
 
     public async Task JoinGameAsync(string username, GameId gameId)
     {
-        GameData? gameData = await DataContext.GetGameDataAsync(gameId) ?? throw new GameNotFoundException();
+        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
 
         if (gameData.Player1 == null)
             gameData.Player1 = username;
@@ -94,7 +94,7 @@ public class GameManager(GameDataContext DataContext) : IGameManager
 
     public async Task DoMoveAsync(GameId gameId, Move move, string username)
     {
-        GameData? gameData = await DataContext.GetGameDataAsync(gameId) ?? throw new GameNotFoundException();
+        GameData? gameData = await DataContext.GetItemAsync(gameId) ?? throw new GameNotFoundException();
 
         if (gameData.Result != null)
             throw new GameFinishedException();

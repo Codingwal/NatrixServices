@@ -9,14 +9,14 @@ public class UserNotFoundException() : Exception("User not found");
 
 [ApiController]
 [Route("api/chess/users")]
-public class UserApi(UserDataContext DataContext, Users.DataContext UserDataContext, IGameManager GameManager) : ControllerBase
+public class UserApi(IItemStorage<Chess.Data.UserData, string> DataContext, Users.DataContext UserDataContext, IGameManager GameManager) : ControllerBase
 {
     [HttpGet("{username}")]
     public async Task<IActionResult> GetUserData(string username)
     {
         if (!await UserDataContext.UserExists(username)) throw new UserNotFoundException();
 
-        var userData = await DataContext.GetOrCreateUserAsync(username);
+        var userData = await DataContext.GetOrCreateItemAsync(username);
         return Ok(new UserDataDTO(userData));
     }
 
@@ -33,7 +33,7 @@ public class UserApi(UserDataContext DataContext, Users.DataContext UserDataCont
     {
         if (!await UserDataContext.UserExists(username)) throw new UserNotFoundException();
 
-        var userData = await DataContext.GetOrCreateUserAsync(username);
+        var userData = await DataContext.GetOrCreateItemAsync(username);
         return Ok(userData.Stats);
     }
 }

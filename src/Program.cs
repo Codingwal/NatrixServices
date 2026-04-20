@@ -5,7 +5,7 @@ namespace NatrixServices;
 
 public static class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
 
@@ -54,8 +54,8 @@ public static class Program
             scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
 
             Directory.CreateDirectory("data/chess");
-            scope.ServiceProvider.GetRequiredService<Chess.Data.GameDataContext>().Init();
-            scope.ServiceProvider.GetRequiredService<Chess.Data.UserDataContext>().Init();
+            await scope.ServiceProvider.GetRequiredService<Chess.Data.GameDataContext>().InitAsync();
+            await scope.ServiceProvider.GetRequiredService<Chess.Data.UserDataContext>().InitAsync();
 
             Directory.CreateDirectory("data/users");
             scope.ServiceProvider.GetRequiredService<Users.DataContext>().Init();

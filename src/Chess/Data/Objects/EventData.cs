@@ -1,4 +1,5 @@
 global using EventId = string;
+
 using System.Text.Json.Serialization;
 
 namespace NatrixServices.Chess.Data;

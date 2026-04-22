@@ -1,10 +1,9 @@
-using System.Numerics;
 using NatrixServices.Chess.Data;
 
 namespace NatrixServices.Chess.Management;
 
-public class EventNotFoundException() : Exception("Event not found");
-public class AlreadyEventParticipantException() : Exception("You are already a participant of this event");
+public class EventNotFoundException() : Exception("Event not found"), INotFoundException;
+public class AlreadyEventParticipantException() : Exception("You are already a participant of this event"), IConflictException;
 
 public struct EventBaseConfig
 {

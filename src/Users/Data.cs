@@ -25,7 +25,3 @@ public class UserData : IIdentifiable<string>
 
     public string Id { get => Username; set => Username = value; }
 }
-public class GlobalData
-{
-
-}

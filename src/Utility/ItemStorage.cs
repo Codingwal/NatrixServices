@@ -78,4 +78,10 @@ public class DatabaseItemStorage<TItem, TId>(DbContextOptions options) : DbConte
         Items.Update(item);
         await SaveChangesAsync();
     }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<TItem>();
+    }
 }

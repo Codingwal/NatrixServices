@@ -26,11 +26,27 @@ public static class Program
         builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
         builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
 
+
+        /* Setup chess storage */
+
         builder.Services.AddDbContext<Chess.Data.GameDataContext>(options => options.UseSqlite("Data Source=data/chess/games.db"));
+        builder.Services.AddScoped<IItemStorage<Chess.Data.GameData, GameId>>(sp => sp.GetRequiredService<Chess.Data.GameDataContext>());
+
         builder.Services.AddDbContext<Chess.Data.UserDataContext>(options => options.UseSqlite("Data Source=data/chess/users.db"));
+        builder.Services.AddScoped<IItemStorage<Chess.Data.UserData, GameId>>(sp => sp.GetRequiredService<Chess.Data.UserDataContext>());
+
+        builder.Services.AddDbContext<Chess.Data.EventDataContext>(options => options.UseSqlite("Data Source=data/chess/events.db"));
+        builder.Services.AddScoped<IItemStorage<Chess.Data.EventData, GameId>>(sp => sp.GetRequiredService<Chess.Data.EventDataContext>());
+
+
+        /* Setup chess managers*/
+
+        builder.Services.AddScoped<Chess.Management.IGameManager, Chess.Management.GameManager>();
+        builder.Services.AddScoped<Chess.Management.IEventManager, Chess.Management.EventManager>();
+
 
         builder.Services.AddDbContext<Users.UserDataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
-
+        builder.Services.AddScoped<IItemStorage<Users.UserData, string>>(sp => sp.GetRequiredService<Users.UserDataContext>());
 
 
         WebApplication app = builder.Build();
@@ -45,6 +61,21 @@ public static class Program
         });
 
         app.UseStaticFiles();
+
+        app.UseExceptionHandler(appError =>
+        {
+            appError.Run(async context =>
+            {
+                var exception = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()!.Error;
+
+                context.Response.StatusCode = (int)ExceptionMapper.GetStatusCode(exception);
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    error = (context.Response.StatusCode != 500) ? exception.Message : "Internal Server Error"
+                });
+            });
+        });
 
         // Setup databases
         Directory.CreateDirectory("data");

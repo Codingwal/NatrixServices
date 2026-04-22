@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using NatrixServices.Chess.Core;
 using NatrixServices.Chess.Data;
 

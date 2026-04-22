@@ -3,13 +3,13 @@ using NatrixServices.Chess.Data;
 
 namespace NatrixServices.Chess.Management;
 
-public class GameNotFoundException() : Exception("Game not found");
-public class GameFullException() : Exception("Game is full");
-public class GameFinishedException() : Exception("Game is already finished");
-public class GameNotStartedException() : Exception("Still waiting for players");
-public class NotParticipantException() : Exception("You are not a participant of this game");
-public class AlreadyGameParticipantException() : Exception("You are already a participant of this game");
-public class InvalidMoveException(string message) : Exception(message);
+public class GameNotFoundException() : Exception("Game not found"), INotFoundException;
+public class GameFullException() : Exception("Game is full"), IConflictException;
+public class GameFinishedException() : Exception("Game is already finished"), IGoneException;
+public class GameNotStartedException() : Exception("Still waiting for players"), IConflictException;
+public class NotParticipantException() : Exception("You are not a participant of this game"), IForbiddenException;
+public class AlreadyGameParticipantException() : Exception("You are already a participant of this game"), IConflictException;
+public class InvalidMoveException(string message) : Exception(message), IUnprocessableException;
 
 public interface IGameManager
 {

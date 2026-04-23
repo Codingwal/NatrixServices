@@ -93,7 +93,7 @@ public record GameListDTO(List<GameDataDTO> Games)
 };
 public record MoveListDTO
 {
-    public List<MoveDTO> Moves = [];
+    public List<MoveDTO> Moves { get; set; } = [];
 
     public MoveListDTO(List<MoveDTO> moves)
     {

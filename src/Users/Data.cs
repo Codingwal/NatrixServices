@@ -8,7 +8,7 @@ public class UserDataContext(DbContextOptions<UserDataContext> options) : Databa
     public async Task<bool> UserExistsAsync(string username) => await ItemExistsAsync(username);
     public async Task<bool> AuthenticateAsync(string username, string passwordHash)
     {
-        UserData? userData = await GetItemAsync(username);
+        UserData? userData = await GetItemOrDefaultAsync(username);
         if (userData == null) return false;
 
         return userData.PasswordHash == passwordHash;

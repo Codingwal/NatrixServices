@@ -16,6 +16,7 @@ public interface IItemStorage<TItem, TId>
     Task<bool> ItemExistsAsync(TId id);
 
     Task<TItem> GetItemAsync(TId id);
+    Task<TItem?> GetItemOrDefaultAsync(TId id);
     Task<TItem> GetOrCreateItemAsync(TId id);
     Task<List<TItem>> GetAllItemsAsync();
 
@@ -36,10 +37,14 @@ public class DatabaseItemStorage<TItem, TId>(DbContextOptions options) : DbConte
 
     public async Task<bool> ItemExistsAsync(TId id) => await Items.AnyAsync(i => id.Equals(i.Id));
 
+    public async Task<TItem?> GetItemOrDefaultAsync(TId id)
+    {
+        return await Items.FindAsync(id);
+    }
+
     public async Task<TItem> GetItemAsync(TId id)
     {
-        var item = await Items.FindAsync(id) ?? throw new KeyNotFoundException($"Item with id {id} not found.");
-        return item;
+        return await GetItemOrDefaultAsync(id) ?? throw new KeyNotFoundException($"Item with id {id} not found.");
     }
 
     public async Task<TItem> GetOrCreateItemAsync(TId id)

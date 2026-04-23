@@ -32,7 +32,7 @@ public partial class ChessGame
         string[] rows = infos[0].Split('/');
         Fields = new char[8, 8];
         for (int y = 0; y < 8; y++)
-            InitRow(y, rows[y]);
+            InitRow(y, rows[7 - y]); // FEN starts with row 8
 
         NextPlayer = infos[1] == "w" ? Players.White : Players.Black;
 
@@ -74,7 +74,7 @@ public partial class ChessGame
     {
         string fen = "";
         for (int y = 0; y < 8; y++)
-            fen += CalcRowFen(y) + '/';
+            fen += CalcRowFen(7 - y) + '/'; // FEN starts with row 8
 
         fen = fen[..^1]; // Remove trailing '/'
 

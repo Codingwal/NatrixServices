@@ -64,7 +64,7 @@ public class HeaderAuthAttribute : ActionFilterAttribute
         var dataContext = serviceProvider.GetRequiredService<UserDataContext>();
 
         if (!await Auth.AuthenticateUserAsync(context.HttpContext.Request, dataContext))
-            context.Result = new UnauthorizedResult();
+            context.Result = new UnauthorizedObjectResult("Invalid username or password hash");
 
         await base.OnActionExecutionAsync(context, next);
     }

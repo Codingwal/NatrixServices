@@ -66,7 +66,8 @@ public partial class ChessEngine(ChessGame Game)
             for (int y = 0; y < 8; y++)
             {
                 Move move = new(pos, new Int2(x, y));
-                if (CheckMove(move) == null)
+                string? error = CheckMove(move);
+                if (error == null)
                     allowedMoves.Add(move);
             }
         }

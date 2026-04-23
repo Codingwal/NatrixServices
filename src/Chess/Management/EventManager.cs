@@ -2,9 +2,6 @@ using NatrixServices.Chess.Data;
 
 namespace NatrixServices.Chess.Management;
 
-public class EventNotFoundException() : Exception("Event not found"), INotFoundException;
-public class AlreadyEventParticipantException() : Exception("You are already a participant of this event"), IConflictException;
-
 public struct EventBaseConfig
 {
     public required string Name { get; set; }
@@ -15,13 +12,19 @@ public struct EventBaseConfig
 
 public interface IEventManager
 {
+    public class Errors
+    {
+        public static readonly Error NotFound = new(ErrorType.NotFound, "Event not found");
+        public static readonly Error AlreadyParticipant = new(ErrorType.Conflict, "Already participant");
+    }
+
     Task<List<EventData>> GetAllEventsAsync();
 
     Task<EventData> GetEventAsync(EventId eventId);
 
     Task CreateTournamentAsync(EventBaseConfig config);
     Task CreateSeasonAsync(EventBaseConfig config);
-    Task JoinEventAsync(EventId eventId, string username);
+    Task<Result> JoinEventAsync(EventId eventId, string username);
 
     Task StartEventAsync(EventId eventId);
 }
@@ -30,7 +33,7 @@ public class EventManager(IItemStorage<EventData, EventId> EventStorage, IGameMa
 {
     public async Task<List<EventData>> GetAllEventsAsync() => await EventStorage.GetAllItemsAsync();
 
-    public async Task<EventData> GetEventAsync(EventId eventId) => await EventStorage.GetItemAsync(eventId) ?? throw new EventNotFoundException();
+    public async Task<EventData> GetEventAsync(EventId eventId) => await EventStorage.GetItemAsync(eventId);
 
     public async Task CreateTournamentAsync(EventBaseConfig config)
     {
@@ -62,15 +65,17 @@ public class EventManager(IItemStorage<EventData, EventId> EventStorage, IGameMa
         await EventStorage.AddItemAsync(eventData);
     }
 
-    public async Task JoinEventAsync(EventId eventId, string username)
+    public async Task<Result> JoinEventAsync(EventId eventId, string username)
     {
         EventData eventData = await GetEventAsync(eventId);
 
         if (eventData.Players.Contains(username))
-            throw new AlreadyEventParticipantException();
+            return IEventManager.Errors.AlreadyParticipant;
 
         eventData.Players.Add(username);
         await EventStorage.UpdateItemAsync(eventData);
+
+        return Result.Success();
     }
 
     public async Task StartEventAsync(string eventId)

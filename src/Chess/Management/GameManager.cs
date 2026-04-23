@@ -3,30 +3,40 @@ using NatrixServices.Chess.Data;
 
 namespace NatrixServices.Chess.Management;
 
-public class GameNotFoundException() : Exception("Game not found"), INotFoundException;
-public class GameFullException() : Exception("Game is full"), IConflictException;
-public class GameFinishedException() : Exception("Game is already finished"), IGoneException;
-public class GameNotStartedException() : Exception("Still waiting for players"), IConflictException;
-public class NotParticipantException() : Exception("You are not a participant of this game"), IForbiddenException;
-public class AlreadyGameParticipantException() : Exception("You are already a participant of this game"), IConflictException;
-public class InvalidMoveException(string message) : Exception(message), IUnprocessableException;
-
 public interface IGameManager
 {
-    Task<GameData> GetGameDataAsync(GameId gameId);
+    public class Errors
+    {
+        public static readonly Error NotFound = new(ErrorType.NotFound, "Game not found");
+        public static readonly Error GameFull = new(ErrorType.Conflict, "Game is full");
+        public static readonly Error GameFinished = new(ErrorType.Gone, "Game is already finished");
+        public static readonly Error GameNotStarted = new(ErrorType.Conflict, "Still waiting for players");
+        public static readonly Error NotParticipant = new(ErrorType.Forbidden, "You are not a participant of this game");
+        public static readonly Error AlreadyParticipant = new(ErrorType.Conflict, "You are already a participant of this game");
+        public static Error InvalidMove(string message) => new(ErrorType.Unprocessable, message);
+    }
+
+    Task<GameData?> GetGameDataAsync(GameId gameId);
+    Task<Result<string>> GetFenAsync(GameId gameId);
     Task<List<GameData>> GetGamesAsync(bool onlyPublic, string? filter = null, string? username = null);
-    Task<List<Move>> GetAllowedMovesAsync(GameId gameId, string? field = null);
+    Task<Result<List<Move>>> GetAllowedMovesAsync(GameId gameId, string? field = null);
     Task<GameId> CreateGameAsync(string name, bool isPublic, int timePerPlayer);
-    Task JoinGameAsync(string username, GameId gameId);
-    Task DoMoveAsync(GameId gameId, Move move, string username);
+    Task<Result> JoinGameAsync(string username, GameId gameId);
+    Task<Result> DoMoveAsync(GameId gameId, Move move, string username);
 }
 
 public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameManager
 {
-    public async Task<GameData> GetGameDataAsync(GameId gameId)
+    public async Task<GameData?> GetGameDataAsync(GameId gameId)
     {
-        GameData gameData = await GameStorage.GetItemAsync(gameId) ?? throw new GameNotFoundException();
-        return gameData;
+        return await GameStorage.GetItemOrDefaultAsync(gameId);
+    }
+
+    public async Task<Result<string>> GetFenAsync(GameId gameId)
+    {
+        var gameData = await GetGameDataAsync(gameId);
+        if (gameData == null) return IGameManager.Errors.NotFound;
+        return gameData.Fen;
     }
 
     public async Task<List<GameData>> GetGamesAsync(bool onlyPublic, string? filter = null, string? username = null)
@@ -55,9 +65,10 @@ public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameMana
         return games;
     }
 
-    public async Task<List<Move>> GetAllowedMovesAsync(GameId gameId, string? field = null)
+    public async Task<Result<List<Move>>> GetAllowedMovesAsync(GameId gameId, string? field = null)
     {
-        GameData gameData = await GetGameDataAsync(gameId);
+        var gameData = await GetGameDataAsync(gameId);
+        if (gameData == null) return IGameManager.Errors.NotFound;
 
         ChessGame game = new(gameData.Fen);
         ChessEngine engine = new(game);
@@ -79,32 +90,35 @@ public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameMana
         return gameId;
     }
 
-    public async Task JoinGameAsync(string username, GameId gameId)
+    public async Task<Result> JoinGameAsync(string username, GameId gameId)
     {
-        GameData gameData = await GetGameDataAsync(gameId);
+        var gameData = await GetGameDataAsync(gameId);
+        if (gameData == null) return IGameManager.Errors.NotFound;
 
         if (gameData.Player1 == username || gameData.Player2 == username)
-            throw new AlreadyGameParticipantException();
+            return IGameManager.Errors.AlreadyParticipant;
 
         if (gameData.Player1 == null)
             gameData.Player1 = username;
         else if (gameData.Player2 == null)
             gameData.Player2 = username;
         else
-            throw new GameFullException();
+            return IGameManager.Errors.GameFull;
 
         await GameStorage.UpdateItemAsync(gameData);
+        return Result.Success();
     }
 
-    public async Task DoMoveAsync(GameId gameId, Move move, string username)
+    public async Task<Result> DoMoveAsync(GameId gameId, Move move, string username)
     {
-        GameData gameData = await GetGameDataAsync(gameId);
+        var gameData = await GetGameDataAsync(gameId);
+        if (gameData == null) return IGameManager.Errors.NotFound;
 
         if (gameData.Result != null)
-            throw new GameFinishedException();
+            return IGameManager.Errors.GameFinished;
 
         if (gameData.Player1 == null || gameData.Player2 == null)
-            throw new GameNotStartedException();
+            return IGameManager.Errors.GameNotStarted;
 
         // Get player index
         int playerIndex;
@@ -113,7 +127,7 @@ public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameMana
         else if (gameData.Player2 == username)
             playerIndex = 2;
         else
-            throw new NotParticipantException();
+            return IGameManager.Errors.NotParticipant;
 
         // Load the game from FEN
         ChessGame game = new(gameData.Fen);
@@ -122,7 +136,7 @@ public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameMana
         ChessEngine engine = new(game);
         string? error = engine.CheckMove(move);
         if (error != null)
-            throw new InvalidMoveException(error);
+            return IGameManager.Errors.InvalidMove(error);
 
         // Do the move and check if the game is finished
         game.DoMove(move);
@@ -152,5 +166,7 @@ public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameMana
         gameData.Moves.Add(move);
         gameData.Fen = game.ToFen();
         await GameStorage.UpdateItemAsync(gameData);
+
+        return Result.Success();
     }
 }

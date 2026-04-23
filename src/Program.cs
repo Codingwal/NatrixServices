@@ -62,21 +62,6 @@ public static class Program
 
         app.UseStaticFiles();
 
-        app.UseExceptionHandler(appError =>
-        {
-            appError.Run(async context =>
-            {
-                var exception = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()!.Error;
-
-                context.Response.StatusCode = (int)ExceptionMapper.GetStatusCode(exception);
-
-                await context.Response.WriteAsJsonAsync(new
-                {
-                    error = (context.Response.StatusCode != 500) ? exception.Message : "Internal Server Error"
-                });
-            });
-        });
-
         // Setup databases
         Directory.CreateDirectory("data");
         using (var scope = app.Services.CreateScope())

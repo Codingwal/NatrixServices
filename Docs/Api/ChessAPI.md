@@ -11,6 +11,7 @@ GameData:
     "name": <string>,
 
     "isPublic": <Bool>,
+    "status": <GameStatus>,
 
     "player1": <Username?>,
     "player2": <Username?>,

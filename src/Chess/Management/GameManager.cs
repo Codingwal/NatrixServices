@@ -3,60 +3,36 @@ using NatrixServices.Chess.Data;
 
 namespace NatrixServices.Chess.Management;
 
-public interface IGameManager
-{
-    public class Errors
-    {
-        public static readonly Error NotFound = new(ErrorType.NotFound, "Game not found");
-        public static readonly Error GameFull = new(ErrorType.Conflict, "Game is full");
-        public static readonly Error GameFinished = new(ErrorType.Gone, "Game is already finished");
-        public static readonly Error GameNotStarted = new(ErrorType.Conflict, "Still waiting for players");
-        public static readonly Error NotParticipant = new(ErrorType.Forbidden, "You are not a participant of this game");
-        public static readonly Error AlreadyParticipant = new(ErrorType.Conflict, "You are already a participant of this game");
-        public static Error InvalidMove(string message) => new(ErrorType.Unprocessable, message);
-    }
-
-    Task<GameData?> GetGameDataAsync(GameId gameId);
-    Task<Result<string>> GetFenAsync(GameId gameId);
-    Task<List<GameData>> GetGamesAsync(bool onlyPublic, string? filter = null, string? username = null);
-    Task<Result<List<Move>>> GetAllowedMovesAsync(GameId gameId, string? field = null);
-    Task<GameId> CreateGameAsync(string name, bool isPublic, int timePerPlayer);
-    Task<Result> JoinGameAsync(string username, GameId gameId);
-    Task<Result> DoMoveAsync(GameId gameId, Move move, string username);
-}
-
 public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameManager
 {
-    public async Task<GameData?> GetGameDataAsync(GameId gameId)
+    public async Task<GameInfo?> GetGameInfoAsync(GameId gameId)
     {
-        return await GameStorage.GetItemOrDefaultAsync(gameId);
+        var game = await GetGameDataAsync(gameId);
+        return game?.ToGameInfo();
     }
 
     public async Task<Result<string>> GetFenAsync(GameId gameId)
     {
-        var gameData = await GetGameDataAsync(gameId);
-        if (gameData == null) return IGameManager.Errors.NotFound;
-        return gameData.Fen;
+        var game = await GetGameDataAsync(gameId);
+        if (game == null) return IGameManager.Errors.NotFound;
+        return game.Fen;
     }
 
-    public async Task<List<GameData>> GetGamesAsync(bool onlyPublic, string? filter = null, string? username = null)
+    public async Task<List<GameInfo>> GetGamesAsync(bool onlyPublic, string? filter = null, string? username = null)
     {
-        List<GameData> games = await GameStorage.GetAllItemsAsync();
+        List<GameInfo> games = (await GameStorage.GetAllItemsAsync()).Select(g => g.ToGameInfo()).ToList();
 
         if (onlyPublic)
             games = games.Where(g => g.IsPublic).ToList();
 
-        bool WaitingForPlayers(GameData game) => game.Player1 == null || game.Player2 == null;
-        bool IsDone(GameData game) => game.Result != null;
-
         if (filter == "active")
-            games = games.Where(g => !WaitingForPlayers(g) && !IsDone(g)).ToList();
+            games = games.Where(g => g.Active).ToList();
         else if (filter == "done")
-            games = games.Where(IsDone).ToList();
+            games = games.Where(g => g.Done).ToList();
         else if (filter == "scheduled")
-            games = []; // TODO: Update if game scheduling is implemented
+            games = games.Where(g => g.Scheduled).ToList();
         else if (filter == "waiting")
-            games = games.Where(WaitingForPlayers).ToList();
+            games = games.Where(g => g.Waiting).ToList();
         else { } // Ignore invalid or null filters
 
         if (username != null)
@@ -85,27 +61,27 @@ public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameMana
     public async Task<GameId> CreateGameAsync(string name, bool isPublic, int timePerPlayer)
     {
         GameId gameId = Utility.GenerateId();
-        GameData gameData = new(gameId, name, isPublic, timePerPlayer, ChessGame.DefaultFen);
-        await GameStorage.AddItemAsync(gameData);
+        GameInfo gameInfo = GameInfo.CreateGameInfo(gameId, name, isPublic, timePerPlayer, ChessGame.DefaultFen);
+        await GameStorage.AddItemAsync(GameData.FromGameInfo(gameInfo));
         return gameId;
     }
 
     public async Task<Result> JoinGameAsync(string username, GameId gameId)
     {
-        var gameData = await GetGameDataAsync(gameId);
-        if (gameData == null) return IGameManager.Errors.NotFound;
+        var game = await GetGameDataAsync(gameId);
+        if (game == null) return IGameManager.Errors.NotFound;
 
-        if (gameData.Player1 == username || gameData.Player2 == username)
+        if (game.Player1 == username || game.Player2 == username)
             return IGameManager.Errors.AlreadyParticipant;
 
-        if (gameData.Player1 == null)
-            gameData.Player1 = username;
-        else if (gameData.Player2 == null)
-            gameData.Player2 = username;
+        if (game.Player1 == null)
+            game.Player1 = username;
+        else if (game.Player2 == null)
+            game.Player2 = username;
         else
             return IGameManager.Errors.GameFull;
 
-        await GameStorage.UpdateItemAsync(gameData);
+        await GameStorage.UpdateItemAsync(game);
         return Result.Success();
     }
 
@@ -168,5 +144,10 @@ public class GameManager(IItemStorage<GameData, GameId> GameStorage) : IGameMana
         await GameStorage.UpdateItemAsync(gameData);
 
         return Result.Success();
+    }
+
+    private async Task<GameData?> GetGameDataAsync(GameId gameId)
+    {
+        return await GameStorage.GetItemOrDefaultAsync(gameId);
     }
 }

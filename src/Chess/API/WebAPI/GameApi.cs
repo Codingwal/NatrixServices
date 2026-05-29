@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using NatrixServices.Chess.Core;
-using NatrixServices.Chess.Data;
-using NatrixServices.Chess.Management;
 using NatrixServices.Users;
 
 namespace NatrixServices.Chess.API;
@@ -13,9 +11,9 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     [HttpGet("{gameId}")]
     public async Task<IActionResult> GetGameData(GameId gameId)
     {
-        var gameData = await GameManager.GetGameDataAsync(gameId);
-        if (gameData == null) return NotFound();
-        return Ok(new GameDataDTO(gameData));
+        var game = await GameManager.GetGameInfoAsync(gameId);
+        if (game == null) return NotFound();
+        return Ok(new GameDataDTO(game));
     }
 
     [HttpGet("{gameId}/board")]
@@ -31,9 +29,9 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     [HttpGet("{gameId}/moves")]
     public async Task<IActionResult> GetMoves(GameId gameId)
     {
-        var gameData = await GameManager.GetGameDataAsync(gameId);
-        if (gameData == null) return NotFound();
-        return Ok(new MoveListDTO(gameData.Moves));
+        var game = await GameManager.GetGameInfoAsync(gameId);
+        if (game == null) return NotFound();
+        return Ok(new MoveListDTO(game.Moves));
     }
 
     [HttpGet("{gameId}/allowed-moves")]
@@ -50,7 +48,7 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     [HttpGet("")]
     public async Task<IActionResult> GetGames([FromQuery] string? status = null, [FromQuery] string? username = null)
     {
-        List<GameData> games = await GameManager.GetGamesAsync(onlyPublic: true, status, username);
+        var games = await GameManager.GetGamesAsync(onlyPublic: true, status, username);
         return Ok(new GameListDTO(games));
     }
 

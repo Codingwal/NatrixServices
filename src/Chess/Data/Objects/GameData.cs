@@ -1,5 +1,3 @@
-global using GameId = string;
-
 using System.ComponentModel.DataAnnotations;
 using NatrixServices.Chess.Core;
 
@@ -8,34 +6,69 @@ namespace NatrixServices.Chess.Data;
 public class GameData : IIdentifiable<GameId>
 {
     [Key, Required, StringLength(8)]
-    public GameId GameId { get; set; } = GameId.Empty;
-    public string Name { get; set; } = string.Empty;
+    public required GameId Id { get; set; }
+    public required string Name { get; set; }
 
-    public bool IsPublic { get; set; } = false;
+    public bool IsPublic { get; set; }
 
-    public string? Player1 { get; set; } = null;
-    public string? Player2 { get; set; } = null;
+    public required string? Player1 { get; set; }
+    public required string? Player2 { get; set; }
 
-    public TimeSpan TimePerPlayer { get; set; }
-    public TimeSpan TimeLeft1 { get; set; }
-    public TimeSpan TimeLeft2 { get; set; }
-    public DateTimeOffset LastMoveTime { get; set; } = default;
+    public required TimeSpan TimePerPlayer { get; set; }
+    public required TimeSpan TimeLeft1 { get; set; }
+    public required TimeSpan TimeLeft2 { get; set; }
+    public required DateTimeOffset LastMoveTime { get; set; }
 
-    public string Fen { get; set; } = string.Empty;
-    public List<Move> Moves { get; set; } = [];
+    public required string Fen { get; set; }
+    public required List<Move> Moves { get; set; }
 
-    public char? Result { get; set; } = null; // optional. 'w' => white won, 'b' => black won, 'd' => draw
-    public string Id { get => GameId; set => GameId = value; }
+    public char? Result { get; set; }
 
-    public GameData() { }
-    public GameData(GameId gameId, string name, bool isPublic, int timePerPlayer, string fen)
+    public GameInfo ToGameInfo()
     {
-        GameId = gameId;
-        Name = name;
-        IsPublic = isPublic;
-        TimePerPlayer = TimeSpan.FromMinutes(timePerPlayer);
-        TimeLeft1 = TimePerPlayer;
-        TimeLeft2 = TimePerPlayer;
-        Fen = fen;
+        return new GameInfo()
+        {
+            GameId = Id,
+            Name = Name,
+
+            IsPublic = IsPublic,
+
+            Player1 = Player1,
+            Player2 = Player2,
+
+            TimePerPlayer = TimePerPlayer,
+            TimeLeft1 = TimeLeft1,
+            TimeLeft2 = TimeLeft2,
+            LastMoveTime = LastMoveTime,
+
+            Fen = Fen,
+            Moves = Moves,
+
+            Result = Result
+        };
+    }
+
+    public static GameData FromGameInfo(GameInfo game)
+    {
+        return new GameData()
+        {
+            Id = game.GameId,
+            Name = game.Name,
+
+            IsPublic = game.IsPublic,
+
+            Player1 = game.Player1,
+            Player2 = game.Player2,
+
+            TimePerPlayer = game.TimePerPlayer,
+            TimeLeft1 = game.TimeLeft1,
+            TimeLeft2 = game.TimeLeft2,
+            LastMoveTime = game.LastMoveTime,
+
+            Fen = game.Fen,
+            Moves = game.Moves,
+
+            Result = game.Result
+        };
     }
 }

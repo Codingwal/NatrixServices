@@ -41,7 +41,7 @@ public static class Program
 
         /* Setup chess managers*/
 
-        builder.Services.AddScoped<Chess.Management.IGameManager, Chess.Management.GameManager>();
+        builder.Services.AddScoped<Chess.Core.IGameManager, Chess.Management.GameManager>();
         builder.Services.AddScoped<Chess.Management.IEventManager, Chess.Management.EventManager>();
 
 

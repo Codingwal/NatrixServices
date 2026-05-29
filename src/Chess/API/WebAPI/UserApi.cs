@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using NatrixServices.Chess.Data;
-using NatrixServices.Chess.Management;
+using NatrixServices.Chess.Core;
 using NatrixServices.Users;
 
 namespace NatrixServices.Chess.API;
@@ -24,7 +23,7 @@ public class UserApi(IItemStorage<Data.UserData, string> UserDataStorage, IItemS
     [HeaderAuth]
     public async Task<IActionResult> GetUserGames(string username, [FromQuery] string? status = null)
     {
-        List<GameData> games = await GameManager.GetGamesAsync(onlyPublic: false, status, username);
+        var games = await GameManager.GetGamesAsync(onlyPublic: false, status, username);
         return Ok(new GameListDTO(games));
     }
 

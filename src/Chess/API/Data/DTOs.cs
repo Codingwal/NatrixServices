@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using NatrixServices.Chess.Core;
 using NatrixServices.Chess.Data;
 
@@ -7,6 +8,7 @@ public record GameDataDTO(
     GameId GameId,
     string Name,
     bool IsPublic,
+    string Status,
     string? Player1,
     string? Player2,
     TimeSpan TimePerPlayer,
@@ -16,10 +18,11 @@ public record GameDataDTO(
     char? Result
 )
 {
-    public GameDataDTO(GameData data) : this(
+    public GameDataDTO(GameInfo data) : this(
         data.GameId,
         data.Name,
         data.IsPublic,
+        data.Status,
         data.Player1,
         data.Player2,
         data.TimePerPlayer,
@@ -68,10 +71,11 @@ public record UserDataDTO
 
 public record MoveDTO
 {
-    public string From { get; set; }
-    public string To { get; set; }
-    public char? Promotion { get; set; }
+    [Required] public string From { get; set; } = String.Empty;
+    [Required] public string To { get; set; } = String.Empty;
+    public char? Promotion { get; set; } = null;
 
+    public MoveDTO() { }
     public MoveDTO(Move move)
     {
         From = ChessEngine.PosToFieldDesc(move.Origin);
@@ -86,7 +90,7 @@ public record MoveDTO
 
 public record GameListDTO(List<GameDataDTO> Games)
 {
-    public GameListDTO(List<GameData> games) : this(
+    public GameListDTO(List<GameInfo> games) : this(
         games.Select(g => new GameDataDTO(g)).ToList()
     )
     { }

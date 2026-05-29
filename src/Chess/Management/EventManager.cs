@@ -1,3 +1,4 @@
+using NatrixServices.Chess.Core;
 using NatrixServices.Chess.Data;
 
 namespace NatrixServices.Chess.Management;

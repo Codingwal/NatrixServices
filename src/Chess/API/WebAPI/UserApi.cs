@@ -11,6 +11,7 @@ public class UserNotFoundException() : Exception("User not found");
 public class UserApi(IItemStorage<Data.UserData, string> UserDataStorage, IItemStorage<Users.UserData, string> UserStorage, IGameManager GameManager) : ControllerBase
 {
     [HttpGet("{username}")]
+    [NoAuth]
     public async Task<IActionResult> GetUserData(string username)
     {
         if (!await UserStorage.ItemExistsAsync(username)) throw new UserNotFoundException();
@@ -20,7 +21,7 @@ public class UserApi(IItemStorage<Data.UserData, string> UserDataStorage, IItemS
     }
 
     [HttpGet("{username}/games")]
-    [HeaderAuth]
+    [AuthAsUser("username")]
     public async Task<IActionResult> GetUserGames(string username, [FromQuery] string? status = null)
     {
         var games = await GameManager.GetGamesAsync(onlyPublic: false, status, username);
@@ -28,6 +29,7 @@ public class UserApi(IItemStorage<Data.UserData, string> UserDataStorage, IItemS
     }
 
     [HttpGet("{username}/stats")]
+    [NoAuth]
     public async Task<IActionResult> GetUserStats(string username)
     {
         if (!await UserStorage.ItemExistsAsync(username)) throw new UserNotFoundException();

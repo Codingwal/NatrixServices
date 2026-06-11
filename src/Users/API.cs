@@ -7,6 +7,7 @@ namespace NatrixServices.Users;
 public class Api(IItemStorage<UserData, string> UserDataStorage) : ControllerBase
 {
     [HttpPost]
+    [NoAuth]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
         string username = request.Username.ToLower();
@@ -21,7 +22,7 @@ public class Api(IItemStorage<UserData, string> UserDataStorage) : ControllerBas
     public record CreateUserRequest(string Username, string PasswordHash);
 
     [HttpGet("{username}")]
-    [HeaderAuth]
+    [AuthAsUser("username")]
     public async Task<IActionResult> GetUserInfo(string username)
     {
         if (Request.Headers["username"] != username)

@@ -4,11 +4,12 @@ using NatrixServices.Users;
 
 namespace NatrixServices.DnsBlocker;
 
+/*
 [Route("api/dnsblocker/users/{username}/")]
 [ApiController]
 public class UserAPI(DataContext DataContext) : ControllerBase
 {
-    /* User data */
+    // User data 
 
     [HttpGet("requests/last")]
     [HeaderAuth]
@@ -116,3 +117,4 @@ public class UserFilterAPI(DataContext DataContext) : ListAPI<FilterReferenceDTO
         return "Invalid property";
     }
 }
+*/

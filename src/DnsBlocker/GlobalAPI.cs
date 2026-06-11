@@ -5,6 +5,7 @@ using NatrixServices.Users;
 
 namespace NatrixServices.DnsBlocker;
 
+/*
 [Route("api/dnsblocker/global")]
 [ApiController]
 public class GlobalAPI(DataContext DataContext) : ControllerBase
@@ -88,3 +89,4 @@ public class GlobalFilterAPI(DataContext DataContext) : ListAPI<FilterConfigDTO>
 
     protected override string? PatchItemProperty(string property, FilterConfigDTO obj, JsonElement newData) => "Invalid property";
 }
+*/

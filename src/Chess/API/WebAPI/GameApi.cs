@@ -9,6 +9,7 @@ namespace NatrixServices.Chess.API;
 public class GameApi(IGameManager GameManager) : ControllerBase
 {
     [HttpGet("{gameId}")]
+    [NoAuth]
     public async Task<IActionResult> GetGameData(GameId gameId)
     {
         var game = await GameManager.GetGameInfoAsync(gameId);
@@ -17,6 +18,7 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     }
 
     [HttpGet("{gameId}/board")]
+    [NoAuth]
     public async Task<IActionResult> GetBoard(GameId gameId)
     {
         var result = await GameManager.GetFenAsync(gameId);
@@ -27,6 +29,7 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     }
 
     [HttpGet("{gameId}/moves")]
+    [NoAuth]
     public async Task<IActionResult> GetMoves(GameId gameId)
     {
         var game = await GameManager.GetGameInfoAsync(gameId);
@@ -35,6 +38,7 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     }
 
     [HttpGet("{gameId}/allowed-moves")]
+    [NoAuth]
     public async Task<IActionResult> GetAllowedMoves(GameId gameId, [FromQuery] string? field)
     {
         var result = await GameManager.GetAllowedMovesAsync(gameId, field);
@@ -46,6 +50,7 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     }
 
     [HttpGet("")]
+    [NoAuth]
     public async Task<IActionResult> GetGames([FromQuery] string? status = null, [FromQuery] string? username = null)
     {
         var games = await GameManager.GetGamesAsync(onlyPublic: true, status, username);
@@ -53,6 +58,7 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     }
 
     [HttpPost("")]
+    [NoAuth]
     public async Task<IActionResult> CreateGame([FromBody] CreateGameRequest request)
     {
         GameId gameId = await GameManager.CreateGameAsync(request.Name, request.IsPublic, request.TimePerPlayer);
@@ -61,18 +67,18 @@ public class GameApi(IGameManager GameManager) : ControllerBase
     public record CreateGameRequest(string Name, bool IsPublic, int TimePerPlayer);
 
     [HttpPost("{gameId}/players")]
-    [HeaderAuth]
-    public async Task<IActionResult> JoinGame(GameId gameId, [FromHeader] string username)
+    [AuthAsUser]
+    public async Task<IActionResult> JoinGame(GameId gameId)
     {
-        var result = await GameManager.JoinGameAsync(username, gameId);
+        var result = await GameManager.JoinGameAsync(HttpContext.GetUsername(), gameId);
         return result.ToActionResult();
     }
 
     [HttpPost("{gameId}/moves")]
-    [HeaderAuth]
-    public async Task<IActionResult> Move(GameId gameId, [FromHeader] string username, [FromBody] MoveDTO move)
+    [AuthAsUser]
+    public async Task<IActionResult> Move(GameId gameId, [FromBody] MoveDTO move)
     {
-        var result = await GameManager.DoMoveAsync(gameId, move.ToMove(), username);
+        var result = await GameManager.DoMoveAsync(gameId, move.ToMove(), HttpContext.GetUsername());
         return result.ToActionResult();
     }
 }

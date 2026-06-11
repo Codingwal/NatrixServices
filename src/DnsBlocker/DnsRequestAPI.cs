@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace NatrixServices.DnsBlocker;
 
+/*
 [Route("dns-query")]
 [ApiController]
 public class DnsRequestAPI(ILogger<DnsRequestAPI> Logger, DataContext DataContext) : ControllerBase
@@ -109,3 +110,4 @@ public class DnsRequestAPI(ILogger<DnsRequestAPI> Logger, DataContext DataContex
     }
 
 }
+*/

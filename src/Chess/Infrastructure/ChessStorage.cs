@@ -5,7 +5,7 @@ using NatrixServices.Shared.Infrastructure.Database;
 
 namespace NatrixServices.Chess.Infrastructure;
 
-public class ChessStorage(DbContextOptions options) : DbContext(options), IUserStorage, IGameStorage
+public class ChessStorage(DbContextOptions<ChessStorage> options) : DbContext(options), IUserStorage, IGameStorage
 {
     private DbSet<UserData> Users => Set<UserData>();
     private DbSet<ChessGame> Games => Set<ChessGame>();

@@ -1,6 +1,8 @@
 using System.Reflection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using NatrixServices.Chess.Core.Engine;
+using NatrixServices.Chess.Core.Interfaces;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Infrastructure.Middleware;
 
@@ -44,12 +46,23 @@ public static class Program
         builder.Services.AddScoped<IUserStorage>(sp => sp.GetRequiredService<UserStorage>());
 
 
-        AddCommandHandlers(builder.Services, typeof(Program).Assembly);
+        // -- Setup event and command pipelines -- //
 
-        WebApplication app = builder.Build();
+        AddCommandHandlers(builder.Services, typeof(Program).Assembly);
+        AddEventHandlers(builder.Services, typeof(Program).Assembly);
+
+        builder.Services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
+        builder.Services.AddSingleton<IEventManager, EventManager>();
+
+
+        // -- Setup special services -- //
+
+        builder.Services.AddSingleton<IChessEngine, ChessEngine>();
 
 
         // -- Configure app -- //
+
+        WebApplication app = builder.Build();
 
         app.UseCors();
         app.UseDefaultFiles();
@@ -101,6 +114,25 @@ public static class Program
                 .Where(i => i.IsGenericType
                     && (i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)
                     || i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>))
+                );
+
+            foreach (var handlerInterface in handlerInterfaces)
+            {
+                services.AddScoped(handlerInterface, type);
+            }
+        }
+    }
+
+    private static void AddEventHandlers(IServiceCollection services, Assembly assembly)
+    {
+        var types = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract);
+
+        foreach (var type in types)
+        {
+            var handlerInterfaces = type.GetInterfaces()
+                .Where(i => i.IsGenericType
+                    && i.GetGenericTypeDefinition() == typeof(IEventHandler<>)
                 );
 
             foreach (var handlerInterface in handlerInterfaces)

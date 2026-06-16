@@ -16,7 +16,7 @@ public class CommandDispatcher(IServiceProvider serviceProvider) : ICommandDispa
     public async Task<Result> ExecuteCommandAsync<TCommand>(TCommand command) where TCommand : ICommand
     {
         if (command == null)
-            throw new ArgumentException("Argument is null", nameof(command));
+            throw new ArgumentException("Command is null", nameof(command));
 
         var handler = serviceProvider.GetService<ICommandHandler<TCommand>>()
             ?? throw new NotImplementedException($"Handler for command of type {typeof(TCommand)} is missing.");

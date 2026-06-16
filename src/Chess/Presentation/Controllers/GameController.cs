@@ -4,6 +4,7 @@ using NatrixServices.Chess.Core.Entities;
 using NatrixServices.Chess.Presentation.DTOs;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Core;
+using NatrixServices.Shared.Infrastructure;
 
 namespace NatrixServices.Chess.Presentation.Controllers;
 

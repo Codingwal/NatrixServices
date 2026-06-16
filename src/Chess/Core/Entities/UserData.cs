@@ -2,9 +2,9 @@ using NatrixServices.Shared.Core;
 
 namespace NatrixServices.Chess.Core.Entities;
 
-public class UserData
+public class UserData(string username)
 {
-    public string Username { get; set; } = string.Empty;
+    public string Username { get; set; } = username;
     public bool TitleHolder { get; set; } = false;
     public int SeasonsWon { get; set; } = 0;
     public int TournamentsWon { get; set; } = 0;

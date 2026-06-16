@@ -5,7 +5,7 @@ using NatrixServices.Users.Core.Entities;
 
 namespace NatrixServices.Users.Infrastructure;
 
-public class UserStorage(DbContextOptions options) : DbContext(options), IUserStorage
+public class UserStorage(DbContextOptions<UserStorage> options) : DbContext(options), IUserStorage
 {
     private DbSet<UserData> Users => Set<UserData>();
     public async Task InitAsync() => await Database.EnsureCreatedAsync();

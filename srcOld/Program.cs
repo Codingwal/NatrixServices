@@ -1,12 +1,10 @@
-using System.Reflection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using NatrixServices.Shared.Application;
-using NatrixServices.Shared.Infrastructure.Middleware;
+using NatrixServices.Users;
 
 namespace NatrixServices;
 
-public static class Program2
+public static class Program
 {
     public static async Task Main(string[] args)
     {
@@ -26,14 +24,30 @@ public static class Program2
 
         builder.Services.AddControllers();
 
-        AddDatabase<Chess.Application.Interfaces.IGameStorage, Chess.Infrastructure.GameStorage>(builder, "data/chess/games.db");
-        AddDatabase<Chess.Application.Interfaces.IUserStorage, Chess.Infrastructure.UserStorage>(builder, "data/chess/users.db");
-        AddDatabase<Users.Application.Interfaces.IUserStorage, Users.Infrastructure.UserStorage>(builder, "data/users/users.db");
-
-        // TODO: Handle user stuff
+        // builder.Services.AddDbContext<DnsBlocker.DataContext>(options => options.UseSqlite("Data Source=data/dnsblocker/data.db"));
+        // builder.Services.AddHostedService<DnsBlocker.DnsBlockerService>();
 
 
-        AddCommandHandlers(builder.Services, typeof(Program).Assembly);
+        /* Setup chess storage */
+
+        builder.Services.AddDbContext<Chess.Data.GameDataContext>(options => options.UseSqlite("Data Source=data/chess/games.db"));
+        builder.Services.AddScoped<IItemStorage<Chess.Data.GameData, GameId>>(sp => sp.GetRequiredService<Chess.Data.GameDataContext>());
+
+        builder.Services.AddDbContext<Chess.Data.UserDataContext>(options => options.UseSqlite("Data Source=data/chess/users.db"));
+        builder.Services.AddScoped<IItemStorage<Chess.Data.UserData, GameId>>(sp => sp.GetRequiredService<Chess.Data.UserDataContext>());
+
+        builder.Services.AddDbContext<Chess.Data.EventDataContext>(options => options.UseSqlite("Data Source=data/chess/events.db"));
+        builder.Services.AddScoped<IItemStorage<Chess.Data.EventData, GameId>>(sp => sp.GetRequiredService<Chess.Data.EventDataContext>());
+
+
+        /* Setup chess managers*/
+
+        builder.Services.AddScoped<Chess.Core.IGameManager, Chess.Management.GameManager>();
+        builder.Services.AddScoped<Chess.Management.IEventManager, Chess.Management.EventManager>();
+
+
+        builder.Services.AddDbContext<Users.UserDataContext>(options => options.UseSqlite("Data Source=data/users/data.db"));
+        builder.Services.AddScoped<IItemStorage<Users.UserData, string>>(sp => sp.GetRequiredService<Users.UserDataContext>());
 
 
         WebApplication app = builder.Build();
@@ -60,9 +74,12 @@ public static class Program2
         Directory.CreateDirectory("data");
         using (var scope = app.Services.CreateScope())
         {
+            // Directory.CreateDirectory("data/dnsblocker");
+            // scope.ServiceProvider.GetRequiredService<DnsBlocker.DataContext>().Init();
+
             Directory.CreateDirectory("data/chess");
-            await scope.ServiceProvider.GetRequiredService<GameStorage>().InitAsync();
-            await scope.ServiceProvider.GetRequiredService<UserStorage>().InitAsync();
+            await scope.ServiceProvider.GetRequiredService<Chess.Data.GameDataContext>().InitAsync();
+            await scope.ServiceProvider.GetRequiredService<Chess.Data.UserDataContext>().InitAsync();
 
             Directory.CreateDirectory("data/users");
             await scope.ServiceProvider.GetRequiredService<Users.UserDataContext>().InitAsync();
@@ -78,34 +95,6 @@ public static class Program2
         VerifyAllEndpointsHaveAuthAttribute(app);
 
         await appTask;
-    }
-
-    private static void AddDatabase<TInterface, TDatabase>(WebApplicationBuilder builder, string dbPath)
-            where TInterface : class
-            where TDatabase : DbContext, TInterface
-    {
-        builder.Services.AddDbContext<TDatabase>(options => options.UseSqlite($"Data Source={dbPath}"));
-        builder.Services.AddScoped<TInterface>(sp => sp.GetRequiredService<TDatabase>());
-    }
-
-    private static void AddCommandHandlers(IServiceCollection services, Assembly assembly)
-    {
-        var types = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract);
-
-        foreach (var type in types)
-        {
-            var handlerInterfaces = type.GetInterfaces()
-                .Where(i => i.IsGenericType
-                    && (i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)
-                    || i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>))
-                );
-
-            foreach (var handlerInterface in handlerInterfaces)
-            {
-                services.AddScoped(handlerInterface, type);
-            }
-        }
     }
 
     private static void VerifyAllEndpointsHaveAuthAttribute(WebApplication app)

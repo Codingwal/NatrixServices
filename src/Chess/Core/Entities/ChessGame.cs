@@ -1,0 +1,146 @@
+using NatrixServices.Shared.Core;
+
+namespace NatrixServices.Chess.Core.Entities;
+
+public enum Players { White, Black }
+public enum GameStatus { WaitingForPlayers, Waiting, Active, Done }
+public enum GameResult { WinWhite, WinBlack, Draw }
+public record Move(Int2 Origin, Int2 Destination, ChessFigure? Promotion = null);
+public class ChessGame
+{
+    public GameId GameId { get; }
+
+    public string Name { get; private set; }
+    public bool IsPublic { get; private set; }
+    public GameStatus Status { get; private set; }
+
+    public string Fen { get; private set; }
+    public List<Move> Moves { get; set; } = [];
+    public GameResult? MatchResult { get; private set; } = null;
+    public Players NextPlayer { get; private set; } = Players.White;
+
+    public string? PlayerWhite { get; private set; } = null;
+    public string? PlayerBlack { get; private set; } = null;
+
+    public TimeSpan TimePerPlayer { get; private set; }
+    public TimeSpan TimeLeftWhite { get; private set; }
+    public TimeSpan TimeLeftBlack { get; private set; }
+    public DateTime StartTime { get; private set; }
+    public DateTime LastMoveTime { get; private set; }
+    private DateTime lastClockUpdateTime;
+
+    public const string DefaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+    public ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timePerPlayer, string fen)
+    {
+        GameId = gameId;
+        Name = name;
+        IsPublic = isPublic;
+        Status = GameStatus.WaitingForPlayers;
+        TimePerPlayer = timePerPlayer;
+        TimeLeftWhite = timePerPlayer;
+        TimeLeftBlack = timePerPlayer;
+        Fen = fen;
+    }
+
+    public Result AddPlayer(string playerName)
+    {
+        if (string.IsNullOrEmpty(playerName))
+            return Result.Failure(ErrorType.BadRequest, "Player name cannot be null or empty!");
+
+        if (Status != GameStatus.WaitingForPlayers)
+            return Result.Failure(ErrorType.Conflict, "Game is already full!");
+
+        if (PlayerWhite == null)
+            PlayerWhite = playerName;
+        else
+            PlayerBlack = playerName;
+
+        if (PlayerWhite != null && PlayerBlack != null)
+        {
+            if (PlayerWhite == PlayerBlack)
+                return Result.Failure(ErrorType.BadRequest, $"Player {PlayerWhite} cannot play against themselves!");
+
+            Status = GameStatus.Waiting;
+        }
+
+        return Result.Success();
+    }
+
+    public Result StartGame()
+    {
+        if (Status != GameStatus.Waiting)
+            return Result.Failure(ErrorType.Conflict, "Game cannot be started! The game must be in waiting state.");
+
+        StartTime = DateTime.UtcNow;
+        Status = GameStatus.Active;
+        LastMoveTime = DateTime.UtcNow;
+        lastClockUpdateTime = DateTime.UtcNow;
+
+        return Result.Success();
+    }
+
+    public Result DoMove(string newFen, GameResult? result)
+    {
+        if (Status != GameStatus.Active)
+            return Result.Failure(ErrorType.Conflict, "Game is not active!");
+
+        Fen = newFen;
+
+        // Update result and status
+        if (result != null)
+        {
+            MatchResult = result;
+            Status = GameStatus.Done;
+        }
+
+        LastMoveTime = DateTime.UtcNow;
+        NextPlayer = NextPlayer == Players.White ? Players.Black : Players.White;
+
+        UpdateTime();
+        CheckOutOfTime();
+
+        return Result.Success();
+    }
+
+    public Result<bool> CheckOutOfTime()
+    {
+        if (Status != GameStatus.Active)
+            return Result<bool>.Failure(ErrorType.Conflict, "Game is not active!");
+
+        Result res = UpdateTime();
+        if (res.IsFailure) return Result<bool>.Failure(res.Error);
+
+        if (NextPlayer == Players.White && TimeLeftWhite <= TimeSpan.Zero)
+        {
+            TimeLeftWhite = TimeSpan.Zero;
+            MatchResult = GameResult.WinBlack;
+            Status = GameStatus.Done;
+            return Result<bool>.Success(true);
+        }
+        else if (NextPlayer == Players.Black && TimeLeftBlack <= TimeSpan.Zero)
+        {
+            TimeLeftBlack = TimeSpan.Zero;
+            MatchResult = GameResult.WinWhite;
+            Status = GameStatus.Done;
+            return Result<bool>.Success(true);
+        }
+
+        return Result<bool>.Success(false);
+    }
+
+    private Result UpdateTime()
+    {
+        if (Status != GameStatus.Active)
+            return Result.Failure(ErrorType.Conflict, "Game is not active!");
+
+        if (NextPlayer == Players.White)
+            TimeLeftWhite -= DateTime.UtcNow - lastClockUpdateTime;
+        else
+            TimeLeftBlack -= DateTime.UtcNow - lastClockUpdateTime;
+
+        lastClockUpdateTime = DateTime.UtcNow;
+
+        return Result.Success();
+    }
+}

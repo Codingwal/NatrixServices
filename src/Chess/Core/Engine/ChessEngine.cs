@@ -20,6 +20,15 @@ public class ChessEngine : IChessEngine
     }
     public IEnumerable<Move> GetLegalMoves(ChessBoard board, Int2 startPos)
     {
+        return GetPseudoLegalMoves(board, startPos).Where(move =>
+        {
+            var boardCopy = board.Copy();
+            boardCopy.DoMove(move);
+            return !InCheck(boardCopy, board.GetPiece(startPos).Color!.Value);
+        });
+    }
+    private IEnumerable<Move> GetPseudoLegalMoves(ChessBoard board, Int2 startPos)
+    {
         if (!ChessBoard.InBounds(startPos))
             return [];
 
@@ -31,14 +40,7 @@ public class ChessEngine : IChessEngine
             return [];
 
         IMovementStrategy strategy = MovementFactory.GetMovementStrategy(piece.Figure);
-        var pseudoLegalMoves = strategy.GetPseudoLegalMoves(startPos, board);
-
-        return pseudoLegalMoves.Where(move =>
-        {
-            var boardCopy = board.Copy();
-            boardCopy.DoMove(move);
-            return !InCheck(boardCopy, piece.Color!.Value);
-        });
+        return strategy.GetPseudoLegalMoves(startPos, board);
     }
 
     public GameResult? GetResult(ChessBoard board)
@@ -66,6 +68,8 @@ public class ChessEngine : IChessEngine
     {
         Int2? kingPos = board.FindPiece(new(ChessFigure.King, player)) ?? throw new Exception($"Can't find king of player {player}");
 
-        return GetAllLegalMoves(board).Any(move => move.Destination == kingPos);
+        return board.ForEachField()
+            .SelectMany(field => GetPseudoLegalMoves(board, field.pos))
+            .Any(move => move.Destination == kingPos);
     }
 }

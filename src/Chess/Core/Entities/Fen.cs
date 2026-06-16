@@ -4,6 +4,8 @@ namespace NatrixServices.Chess.Core.Entities;
 
 public static class Fen
 {
+    public const string DefaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    
     public static Result<ChessBoard> FenToBoard(string fen)
     {
         ChessBoard board = new();

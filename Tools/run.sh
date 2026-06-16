@@ -1,1 +1,1 @@
-sudo -E dotnet run
+sudo -E dotnet run --project src/NatrixServices.csproj

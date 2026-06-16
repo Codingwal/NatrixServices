@@ -29,8 +29,6 @@ public class ChessGame
     public DateTime LastMoveTime { get; private set; }
     private DateTime lastClockUpdateTime;
 
-    public const string DefaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
     public ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timePerPlayer, string fen)
     {
         GameId = gameId;

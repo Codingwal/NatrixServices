@@ -64,19 +64,15 @@ public record ChessBoardDTO
     }
 }
 
-public record MoveDTO
+public record MoveDTO(string From, string To, char? Promotion = null)
 {
-    [Required] public string From { get; set; } = String.Empty;
-    [Required] public string To { get; set; } = String.Empty;
-    public char? Promotion { get; set; } = null;
-
-    public MoveDTO() { }
     public MoveDTO(Move move)
-    {
-        From = Fen.PosToFieldDesc(move.Origin);
-        To = Fen.PosToFieldDesc(move.Destination);
-        Promotion = (move.Promotion != null) ? Fen.PieceToChar(new(move.Promotion.Value, Players.Black)) : null;
-    }
+    : this(
+        From: Fen.PosToFieldDesc(move.Origin),
+        To: Fen.PosToFieldDesc(move.Destination),
+        Promotion: (move.Promotion != null) ? Fen.PieceToChar(new(move.Promotion.Value, Players.Black)) : null
+    )
+    { }
     public Result<Move> ToMove()
     {
         var resultFrom = Fen.FieldDescToPos(From);

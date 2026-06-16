@@ -81,7 +81,7 @@ public record Result
 public sealed record Result<TValue> : Result
 {
     private readonly TValue? value;
-    public TValue Value => value ?? throw new InvalidOperationException("Cannot access value of failed Result.");
+    public TValue Value => IsSuccess ? value! : throw new InvalidOperationException($"Cannot access value of failed Result.");
 
     private Result(TValue value)
         : base()

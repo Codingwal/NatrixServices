@@ -38,6 +38,8 @@ public class PawnMovementStrategy : IMovementStrategy
         foreach (var offset in new List<Int2>() { new(1, moveDir), new(-1, moveDir) })
         {
             Int2 pos = startPos + offset;
+            if (!ChessBoard.InBounds(pos)) continue;
+
             ChessPiece capturedPiece = board.GetPiece(pos);
             if (capturedPiece.Figure != ChessFigure.None && !capturedPiece.IsColor(piece.Color!.Value))
                 dests.Add(pos);

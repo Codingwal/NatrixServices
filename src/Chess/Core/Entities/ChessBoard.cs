@@ -45,7 +45,9 @@ public class ChessBoard
     public ChessBoard Copy()
     {
         string fen = Fen.BoardToFen(this);
-        return Fen.FenToBoard(fen);
+        var result = Fen.FenToBoard(fen);
+        if (result.IsFailure) throw new();
+        return result.Value;
     }
 
     public void DoMove(Move move)
@@ -157,15 +159,17 @@ public class ChessBoard
     }
     public Int2? FindPiece(ChessPiece piece)
     {
+        return ForEachField()
+            .FirstOrDefault(field => field.piece == piece).pos;
+    }
+    public IEnumerable<(Int2 pos, ChessPiece piece)> ForEachField()
+    {
         for (int x = 0; x < 8; x++)
         {
             for (int y = 0; y < 8; y++)
             {
-                if (Fields[x, y] == piece)
-                    return new Int2(x, y);
+                yield return (new(x, y), Fields[x, y]);
             }
         }
-
-        return null;
     }
 }

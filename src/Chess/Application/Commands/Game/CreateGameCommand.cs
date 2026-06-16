@@ -15,7 +15,7 @@ public class CreateGameCommandHandler(IGameStorage GameStorage) : ICommandHandle
 
         var game = new ChessGame(gameId, command.Name, command.IsPublic, command.TimePerPlayer, ChessGame.DefaultFen);
 
-        await GameStorage.SaveGameAsync(game);
+        await GameStorage.AddGameAsync(game);
 
         return gameId;
     }

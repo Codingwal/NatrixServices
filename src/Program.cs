@@ -6,7 +6,14 @@ using NatrixServices.Shared.Infrastructure.Middleware;
 
 namespace NatrixServices;
 
-public static class Program2
+using ChessStorage = Chess.Infrastructure.ChessStorage;
+using IChessGameStorage = Chess.Application.Interfaces.IGameStorage;
+using IChessUserStorage = Chess.Application.Interfaces.IUserStorage;
+
+using UserStorage = Users.Infrastructure.UserStorage;
+using IUserStorage = Users.Application.Interfaces.IUserStorage;
+
+public static class Program
 {
     public static async Task Main(string[] args)
     {
@@ -26,46 +33,49 @@ public static class Program2
 
         builder.Services.AddControllers();
 
-        AddDatabase<Chess.Application.Interfaces.IGameStorage, Chess.Infrastructure.GameStorage>(builder, "data/chess/games.db");
-        AddDatabase<Chess.Application.Interfaces.IUserStorage, Chess.Infrastructure.UserStorage>(builder, "data/chess/users.db");
-        AddDatabase<Users.Application.Interfaces.IUserStorage, Users.Infrastructure.UserStorage>(builder, "data/users/users.db");
 
-        // TODO: Handle user stuff
+        // -- Setup database services -- //
+
+        builder.Services.AddDbContext<ChessStorage>(options => options.UseSqlite($"Data Source=data/chess.db"));
+        builder.Services.AddScoped<IChessGameStorage>(sp => sp.GetRequiredService<ChessStorage>());
+        builder.Services.AddScoped<IChessUserStorage>(sp => sp.GetRequiredService<ChessStorage>());
+
+        builder.Services.AddDbContext<UserStorage>(options => options.UseSqlite($"Data Source=data/users.db"));
+        builder.Services.AddScoped<IUserStorage>(sp => sp.GetRequiredService<UserStorage>());
 
 
         AddCommandHandlers(builder.Services, typeof(Program).Assembly);
 
-
         WebApplication app = builder.Build();
 
+
+        // -- Configure app -- //
+
         app.UseCors();
-
         app.UseDefaultFiles();
-
         app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-
         app.UseStaticFiles();
-
         app.UseRouting();
+
+
+        // -- Setup middleware -- //
 
         // Must come after UseRouting and before MapControllers
         app.UseMiddleware<UserAuthMiddleware>();
         app.UseMiddleware<AdminAuthMiddleware>();
         app.UseMiddleware<AuthorizationMiddleware>();
 
-        // Setup databases
+
+        // -- Init databases -- //
+
         Directory.CreateDirectory("data");
         using (var scope = app.Services.CreateScope())
         {
-            Directory.CreateDirectory("data/chess");
-            await scope.ServiceProvider.GetRequiredService<GameStorage>().InitAsync();
+            await scope.ServiceProvider.GetRequiredService<ChessStorage>().InitAsync();
             await scope.ServiceProvider.GetRequiredService<UserStorage>().InitAsync();
-
-            Directory.CreateDirectory("data/users");
-            await scope.ServiceProvider.GetRequiredService<Users.UserDataContext>().InitAsync();
         }
 
         app.MapControllers();
@@ -78,14 +88,6 @@ public static class Program2
         VerifyAllEndpointsHaveAuthAttribute(app);
 
         await appTask;
-    }
-
-    private static void AddDatabase<TInterface, TDatabase>(WebApplicationBuilder builder, string dbPath)
-            where TInterface : class
-            where TDatabase : DbContext, TInterface
-    {
-        builder.Services.AddDbContext<TDatabase>(options => options.UseSqlite($"Data Source={dbPath}"));
-        builder.Services.AddScoped<TInterface>(sp => sp.GetRequiredService<TDatabase>());
     }
 
     private static void AddCommandHandlers(IServiceCollection services, Assembly assembly)
@@ -120,7 +122,7 @@ public static class Program2
                 badEndpoints.Add(endpoint.DisplayName ?? "Unknown Endpoint");
         }
 
-        if (badEndpoints.Any())
+        if (badEndpoints.Count != 0)
             throw new Exception($"The following endpoints are missing AuthAttribute: \n- {string.Join("\n- ", badEndpoints)}");
     }
 }

@@ -2,7 +2,9 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-public static class Extensions
+namespace NatrixServices.Shared.Infrastructure.Database;
+
+public static class SaveAsJsonExtension
 {
     public static void SaveAsJson<T>(this PropertyBuilder<T> propertyBuilder)
     {
@@ -17,14 +19,5 @@ public static class Extensions
         );
 
         propertyBuilder.Metadata.SetValueComparer(comparer);
-    }
-
-    public static void SetUsername(this HttpContext context, string username)
-    {
-        context.Items["username"] = username;
-    }
-    public static string GetUsername(this HttpContext context)
-    {
-        return context.Items["username"] as string ?? throw new Exception("Username not found in HttpContext");
     }
 }

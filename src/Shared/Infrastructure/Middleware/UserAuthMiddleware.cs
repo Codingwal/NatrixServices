@@ -1,6 +1,10 @@
+using NatrixServices.Shared.Application;
+using NatrixServices.Users.Application.Interfaces;
+using NatrixServices.Users.Core.Entities;
+
 namespace NatrixServices.Shared.Infrastructure.Middleware;
 
-public class UserAuthMiddleware(UserDataContext UserDataContext) : IMiddleware
+public class UserAuthMiddleware(IUserStorage userStorage) : IMiddleware
 {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
@@ -19,7 +23,17 @@ public class UserAuthMiddleware(UserDataContext UserDataContext) : IMiddleware
                 return;
             }
 
-            if (!await UserDataContext.AuthenticateAsync(username, passwordHash))
+            UserData? user = await userStorage.GetUserAsync(username);
+            if (user == null)
+            {
+                context.Response.StatusCode = StatusCodes.Status404NotFound;
+                await context.Response.WriteAsync("User not found");
+                return;
+            }
+
+            bool validLogin = user.PasswordHash == passwordHash;
+
+            if (!validLogin)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 await context.Response.WriteAsync("Invalid username or password");

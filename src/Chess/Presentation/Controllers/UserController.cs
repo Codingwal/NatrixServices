@@ -11,15 +11,15 @@ public class UserNotFoundException() : Exception("User not found");
 
 [ApiController]
 [Route("api/chess/users")]
-public class UserApi(ICommandDispatcher dispatcher) : ControllerBase
+public class UserController(ICommandDispatcher dispatcher) : ControllerBase
 {
     [HttpGet("{username}")]
     [NoAuth]
     public async Task<IActionResult> GetUserData(string username)
     {
-        GetOrCreateUserCommand command = new(username);
+        GetUserCommand command = new(username);
 
-        return await dispatcher.ExecuteCommandAsync<GetOrCreateUserCommand, UserData>(command)
+        return await dispatcher.ExecuteCommandAsync<GetUserCommand, UserData>(command)
             .Map(userData => new UserDataDTO(userData))
             .ToActionResult();
     }
@@ -49,9 +49,9 @@ public class UserApi(ICommandDispatcher dispatcher) : ControllerBase
     [NoAuth]
     public async Task<IActionResult> GetUserStats(string username)
     {
-        GetOrCreateUserCommand command = new(username);
+        GetUserCommand command = new(username);
 
-        return await dispatcher.ExecuteCommandAsync<GetOrCreateUserCommand, UserData>(command)
+        return await dispatcher.ExecuteCommandAsync<GetUserCommand, UserData>(command)
             .Map(userData => userData.Stats)
             .ToActionResult();
     }

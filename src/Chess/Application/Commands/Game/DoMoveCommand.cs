@@ -27,7 +27,7 @@ public class DoMoveCommandHandler(IGameStorage GameStorage, IChessEngine ChessEn
 
         game.DoMove(newFen, gameResult);
 
-        await GameStorage.SaveGameAsync(game);
+        await GameStorage.UpdateGameAsync(game);
 
         return Result.Success();
     }

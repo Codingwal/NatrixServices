@@ -1,3 +1,5 @@
+using NatrixServices.Shared.Core;
+
 namespace NatrixServices.Chess.Core.Entities;
 
 public class UserData
@@ -21,16 +23,25 @@ public class UserStats
 
     public double AverageTimeLeftPercent { get; set; } = 0;
 
-    public Dictionary<char, int> PiecesTaken { get; set; } = new() { { 'p', 0 }, { 'r', 0 }, { 'n', 0 }, { 'b', 0 }, { 'q', 0 } };
+    public Dictionary<ChessFigure, int> PiecesTaken { get; set; } = [];
     public int PiecesTakenTotal => PiecesTaken.Values.Sum();
     public double PiecesTakenAverage => Average(PiecesTakenTotal);
 
-    public Dictionary<char, int> PiecesLost { get; set; } = new() { { 'p', 0 }, { 'r', 0 }, { 'n', 0 }, { 'b', 0 }, { 'q', 0 } };
+    public Dictionary<ChessFigure, int> PiecesLost { get; set; } = [];
     public int PiecesLostTotal => PiecesLost.Values.Sum();
     public double PiecesLostAverage => Average(PiecesLostTotal);
 
     public int TotalMoves { get; set; } = 0;
     public double AverageMoves => Average(TotalMoves);
+
+    public UserStats()
+    {
+        foreach (var figure in Figures)
+        {
+            PiecesTaken[figure] = 0;
+            PiecesLost[figure] = 0;
+        }
+    }
 
     public (string, string) GetTitle()
     {
@@ -54,12 +65,12 @@ public class UserStats
         if (AverageMoves >= 40) titles.Add(("Tactician", "Make over 40 moves per game"));
         if (DrawRate >= 0.4) titles.Add(("Businessman", "End over 40% of games in a draw"));
         if (PiecesLostAverage >= 12) titles.Add(("Suicidal", "Lose over 12 pieces per game (on average)"));
-        if (Average(PiecesLost['p']) <= 4) titles.Add(("Man of the people", "Have at least half your pawns left on average"));
-        if (Average(PiecesLost['n']) <= 1) titles.Add(("Horsekeeper", "Keep at least one horse alive on average"));
-        if (Average(PiecesLost['q']) <= 0.3) titles.Add(("Girlpower", "Lose your queen in under 30% of games"));
-        if (Average(PiecesLost['r']) >= 1.5) titles.Add(("Fortress", "Finish the game with one and a half rooks left on average"));
-        if (Average(PiecesTaken['r']) >= 1.2) titles.Add(("Bombardier", "Destroy at least 1.2 rooks on average"));
-        if (Average(PiecesTaken['b']) >= 1) titles.Add(("The wall", "Capture at least one bishop per game (on average)"));
+        if (Average(PiecesLost[ChessFigure.Pawn]) <= 4) titles.Add(("Man of the people", "Have at least half your pawns left on average"));
+        if (Average(PiecesLost[ChessFigure.Knight]) <= 1) titles.Add(("Horsekeeper", "Keep at least one horse alive on average"));
+        if (Average(PiecesLost[ChessFigure.Queen]) <= 0.3) titles.Add(("Girlpower", "Lose your queen in under 30% of games"));
+        if (Average(PiecesLost[ChessFigure.Rook]) >= 1.5) titles.Add(("Fortress", "Finish the game with one and a half rooks left on average"));
+        if (Average(PiecesTaken[ChessFigure.Rook]) >= 1.2) titles.Add(("Bombardier", "Destroy at least 1.2 rooks on average"));
+        if (Average(PiecesTaken[ChessFigure.Bishop]) >= 1) titles.Add(("The wall", "Capture at least one bishop per game (on average)"));
 
         return titles;
     }
@@ -68,46 +79,54 @@ public class UserStats
         return GamesPlayed != 0 ? (double)totalValue / GamesPlayed : 0;
     }
 
-    public void UpdateStats(gameData, Players player)
+    public void UpdateStats(ChessGame gameData, Players player)
     {
-        ChessGame game = new(gameData.Fen);
+        Players otherPlayer = player == Players.White ? Players.Black : Players.White;
+
+        var result = Fen.FenToBoard(gameData.Fen);
+        if (result.IsFailure) throw new Exception($"Invalid fen \"{gameData.Fen}\"");
+        ChessBoard board = result.Value;
 
         // Update GamesPlayed, GamesWon, GamesLost
         GamesPlayed++;
-        if (gameData.Result == 'w')
+        if (gameData.MatchResult == GameResult.WinWhite)
         {
             if (player == Players.White) GamesWon++;
             else GamesLost++;
         }
-        else if (gameData.Result == 'b')
+        else if (gameData.MatchResult == GameResult.WinWhite)
         {
             if (player == Players.Black) GamesWon++;
             else GamesLost++;
         }
 
         // Update TimeLeftPercent
-        TimeSpan timeLeft = (player == Players.White) ? gameData.TimeLeft1 : gameData.TimeLeft2;
+        TimeSpan timeLeft = (player == Players.White) ? gameData.TimeLeftWhite : gameData.TimeLeftBlack;
         double timeLeftPercent = timeLeft / gameData.TimePerPlayer;
         AverageTimeLeftPercent = (AverageTimeLeftPercent * (GamesPlayed - 1) + timeLeftPercent) / GamesPlayed;
 
         // Update FiguresLost and FiguresTaken
-        foreach (char piece in "rnbqp")
+        foreach (var figure in Figures)
         {
-            int countOwn = game.CountPieces(piece, player);
-            int countOpponent = game.CountPieces(piece, ChessEngine.OtherPlayer(player));
+            int countOwn = board.ForEachField().Count(field => field.piece.Figure == figure && field.piece.Color == player);
+            int countOpponent = board.ForEachField().Count(field => field.piece.Figure == figure && field.piece.Color == otherPlayer);
 
-            int startCount = piece switch
+            int startCount = figure switch
             {
-                'r' or 'n' or 'b' => 2,
-                'q' => 1,
-                'p' => 8,
-                _ => throw new("Invalid piece")
+                ChessFigure.Pawn => 8,
+                ChessFigure.Rook or ChessFigure.Knight or ChessFigure.Bishop => 2,
+                _ => 1
             };
 
-            PiecesLost[piece] += startCount - countOwn;
-            PiecesTaken[piece] += startCount - countOpponent;
+            PiecesLost[figure] += startCount - countOwn;
+            PiecesTaken[figure] += startCount - countOpponent;
         }
 
         TotalMoves += gameData.Moves.Count / 2;
     }
+
+    private static readonly List<ChessFigure> Figures = [
+        ChessFigure.Pawn, ChessFigure.Rook, ChessFigure.Knight,
+        ChessFigure.Bishop, ChessFigure.Queen, ChessFigure.King
+    ];
 }

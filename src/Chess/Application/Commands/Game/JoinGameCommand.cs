@@ -17,7 +17,7 @@ public class JoinGameCommandHandler(IGameStorage GameStorage) : ICommandHandler<
         var result = game.AddPlayer(command.PlayerName);
         if (result.IsFailure) return result.Error;
 
-        await GameStorage.SaveGameAsync(game);
+        await GameStorage.UpdateGameAsync(game);
 
         return Result.Success();
     }

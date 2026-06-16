@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using NatrixServices.Shared.Infrastructure.Database;
 using NatrixServices.Users.Application.Interfaces;
+using NatrixServices.Users.Core.Entities;
 
 namespace NatrixServices.Users.Infrastructure;
 
@@ -8,20 +10,19 @@ public class UserStorage(DbContextOptions options) : DbContext(options), IUserSt
     private DbSet<UserData> Users => Set<UserData>();
     public async Task InitAsync() => await Database.EnsureCreatedAsync();
     public async Task<IEnumerable<UserData>> GetAllUsersAsync()
-    {
-        return await Users.ToListAsync();
-    }
+        => await Users.ToListAsync();
 
     public async Task<UserData?> GetUserAsync(string username)
-    {
-        return await Users.FindAsync(username);
-    }
+        => await Users.FindAsync(username);
 
-    public async Task SaveUserAsync(UserData user)
-    {
-        Users.Update(user);
-        await SaveChangesAsync();
-    }
+    public Task AddUserAsync(UserData user)
+        => ItemStorageUtility.AddEntityAsync(this, user, user.Username);
+
+    public Task UpdateUserAsync(UserData user)
+        => ItemStorageUtility.UpdateEntityAsync(this, user, u => u.Username);
+
+    public async Task<bool> UserExists(string username)
+        => await Users.AnyAsync(u => u.Username == username);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

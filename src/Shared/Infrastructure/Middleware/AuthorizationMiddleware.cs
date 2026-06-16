@@ -1,3 +1,5 @@
+using NatrixServices.Shared.Application;
+
 namespace NatrixServices.Shared.Infrastructure.Middleware;
 
 public class AuthorizationMiddleware : IMiddleware

@@ -62,10 +62,13 @@ public class ChessStorage(DbContextOptions<ChessStorage> options) : DbContext(op
         modelBuilder.Entity<ChessGame>(builder =>
         {
             builder.HasKey(g => g.GameId);
-
             builder.Property(g => g.GameId).HasConversion(id => id.Value, str => new GameId(str));
 
             builder.Property(g => g.Status).HasConversion<string>();
+            builder.Property(g => g.EventId).HasConversion(
+                id => id != null ? id.Value.Value : null,
+                str => str != null ? new Core.Entities.EventId(str) : null
+            );
 
             builder.Property(g => g.Moves).SaveAsJson();
             builder.Property(g => g.MatchResult).HasConversion<string>();

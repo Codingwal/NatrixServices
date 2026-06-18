@@ -7,15 +7,16 @@ public enum GameStatus { WaitingForPlayers, Waiting, Active, Done }
 public enum GameResult { WinWhite, WinBlack, Draw }
 public record Move(Int2 Origin, Int2 Destination, ChessFigure? Promotion = null);
 public record DrawOffer(string Player);
-public class ChessGame
+public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timePerPlayer, string fen, EventId? eventId = null)
 {
-    public GameId GameId { get; }
+    public GameId GameId { get; } = gameId;
 
-    public string Name { get; private set; }
-    public bool IsPublic { get; private set; }
-    public GameStatus Status { get; private set; }
+    public string Name { get; private set; } = name;
+    public bool IsPublic { get; private set; } = isPublic;
+    public GameStatus Status { get; private set; } = GameStatus.WaitingForPlayers;
+    public EventId? EventId { get; private set; } = eventId;
 
-    public string Fen { get; private set; }
+    public string Fen { get; private set; } = fen;
     public List<Move> Moves { get; set; } = [];
     public GameResult? MatchResult { get; private set; } = null;
     public Players NextPlayer { get; private set; } = Players.White;
@@ -25,24 +26,12 @@ public class ChessGame
 
     public DrawOffer? DrawOffer { get; private set; } = null;
 
-    public TimeSpan TimePerPlayer { get; private set; }
-    public TimeSpan TimeLeftWhite { get; private set; }
-    public TimeSpan TimeLeftBlack { get; private set; }
-    public DateTime StartTime { get; private set; }
-    public DateTime LastMoveTime { get; private set; }
-    private DateTime lastClockUpdateTime;
-
-    public ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timePerPlayer, string fen)
-    {
-        GameId = gameId;
-        Name = name;
-        IsPublic = isPublic;
-        Status = GameStatus.WaitingForPlayers;
-        TimePerPlayer = timePerPlayer;
-        TimeLeftWhite = timePerPlayer;
-        TimeLeftBlack = timePerPlayer;
-        Fen = fen;
-    }
+    public TimeSpan TimePerPlayer { get; private set; } = timePerPlayer;
+    public TimeSpan TimeLeftWhite { get; private set; } = timePerPlayer;
+    public TimeSpan TimeLeftBlack { get; private set; } = timePerPlayer;
+    public DateTime StartTime { get; private set; } = default;
+    public DateTime LastMoveTime { get; private set; } = default;
+    private DateTime lastClockUpdateTime = default;
 
     public Result AddPlayer(string playerName)
     {

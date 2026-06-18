@@ -1,25 +1,25 @@
 namespace NatrixServices.Chess.Core.Entities;
 
-public readonly record struct GameId
+public readonly record struct EventId
 {
     public string Value { get; }
-    public GameId(string value)
+    public EventId(string value)
     {
         if (value.Length != 8)
-            throw new ArgumentException("GameId must be 8 characters long.");
+            throw new ArgumentException("EventId must be 8 characters long.");
         if (value.Any(c => !char.IsLetterOrDigit(c)))
             throw new ArgumentException($"Illegal character in EventId");
 
         Value = value;
     }
 
-    public static GameId Generate()
+    public static EventId Generate()
     {
         string id = Guid.NewGuid().ToString()[0..8];
-        return new GameId(id);
+        return new EventId(id);
     }
 
-    public static bool TryParse(string? value, out GameId result)
+    public static bool TryParse(string? value, out EventId result)
     {
         if (value is null || value.Length != 8)
         {
@@ -27,7 +27,7 @@ public readonly record struct GameId
             return false;
         }
 
-        result = new GameId(value);
+        result = new EventId(value);
         return true;
     }
 }

@@ -6,6 +6,7 @@ public enum Players { White, Black }
 public enum GameStatus { WaitingForPlayers, Waiting, Active, Done }
 public enum GameResult { WinWhite, WinBlack, Draw }
 public record Move(Int2 Origin, Int2 Destination, ChessFigure? Promotion = null);
+public record DrawOffer(string Player);
 public class ChessGame
 {
     public GameId GameId { get; }
@@ -21,6 +22,8 @@ public class ChessGame
 
     public string? PlayerWhite { get; private set; } = null;
     public string? PlayerBlack { get; private set; } = null;
+
+    public DrawOffer? DrawOffer { get; private set; } = null;
 
     public TimeSpan TimePerPlayer { get; private set; }
     public TimeSpan TimeLeftWhite { get; private set; }
@@ -78,10 +81,17 @@ public class ChessGame
         return Result.Success();
     }
 
-    public Result DoMove(string newFen, GameResult? result)
+    public Result DoMove(string newFen, GameResult? result, string username)
     {
         if (Status != GameStatus.Active)
             return Result.Failure(ErrorType.Conflict, "Game is not active!");
+
+        Players? player = GetPlayer(username);
+        if (player == null)
+            return new Error(ErrorType.Forbidden, $"Player \"{player}\" is not a participant of this game.");
+
+        if (player != NextPlayer)
+            return new Error(ErrorType.Forbidden, "It's not your turn!");
 
         Fen = newFen;
 
@@ -93,10 +103,49 @@ public class ChessGame
         }
 
         LastMoveTime = DateTime.UtcNow;
-        NextPlayer = NextPlayer == Players.White ? Players.Black : Players.White;
+        NextPlayer = (NextPlayer == Players.White) ? Players.Black : Players.White;
 
         UpdateTime();
         CheckOutOfTime();
+
+        return Result.Success();
+    }
+
+    public Result OfferDraw(string username)
+    {
+        if (Status != GameStatus.Active)
+            return Result.Failure(ErrorType.Conflict, "Game is not active!");
+
+        if (GetPlayer(username) == null)
+            return new Error(ErrorType.Forbidden, $"Player \"{username}\" is not a participant of this game.");
+
+        if (DrawOffer == null)
+            DrawOffer = new DrawOffer(username);
+        else
+        {
+            if (DrawOffer.Player != username)
+            {
+                MatchResult = GameResult.Draw;
+                Status = GameStatus.Done;
+            }
+            else
+                return Result.Failure(ErrorType.Conflict, $"Player \"{username}\" is already offering a draw.");
+        }
+
+        return Result.Success();
+    }
+
+    public Result Resign(string username)
+    {
+        if (Status != GameStatus.Active)
+            return Result.Failure(ErrorType.Conflict, "Game is not active!");
+
+        Players? player = GetPlayer(username);
+        if (player == null)
+            return new Error(ErrorType.Forbidden, $"Player \"{username}\" is not a participant of this game.");
+
+        MatchResult = (player == Players.White) ? GameResult.WinBlack : GameResult.WinWhite;
+        Status = GameStatus.Done;
 
         return Result.Success();
     }
@@ -140,5 +189,15 @@ public class ChessGame
         lastClockUpdateTime = DateTime.UtcNow;
 
         return Result.Success();
+    }
+
+    private Players? GetPlayer(string username)
+    {
+        if (username == PlayerWhite)
+            return Players.White;
+        else if (username == PlayerBlack)
+            return Players.Black;
+        else
+            return null;
     }
 }

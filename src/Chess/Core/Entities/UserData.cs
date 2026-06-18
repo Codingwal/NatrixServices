@@ -48,7 +48,7 @@ public class UserStats
         var titles = GetTitles();
         if (titles.Count == 0) return ("", "");
 
-        Random rnd = new(DateTimeOffset.UtcNow.Minute); // Must not change too fast as the function is called twice very quickly and should give the same result
+        Random rnd = new(DateTimeOffset.UtcNow.Hour); // Must not change too fast as the function is called twice very quickly and should give the same result
         int index = (int)rnd.NextInt64(0, titles.Count - 1);
         return titles[index];
     }

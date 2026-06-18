@@ -6,28 +6,41 @@ namespace NatrixServices.Chess.Presentation.DTOs;
 
 public record GameDataDTO(
     GameId GameId,
+
     string Name,
     bool IsPublic,
     string Status,
+
     string? Player1,
     string? Player2,
-    TimeSpan TimePerPlayer,
-    TimeSpan TimeLeft1,
-    TimeSpan TimeLeft2,
+
+    char NextPlayer,
+
+    double TimePerPlayer,
+    double TimeLeft1,
+    double TimeLeft2,
+
     string Fen,
+
     char? Result
 )
 {
     public GameDataDTO(ChessGame data) : this(
         data.GameId,
+
         data.Name,
         data.IsPublic,
         GameStatusDTO.StatusToStr(data.Status),
+
         data.PlayerWhite,
         data.PlayerBlack,
-        data.TimePerPlayer,
-        data.TimeLeftWhite,
-        data.TimeLeftBlack,
+
+        (data.NextPlayer == Players.White) ? 'w' : 'b',
+
+        data.TimePerPlayer.TotalMinutes,
+        data.TimeLeftWhite.TotalMinutes,
+        data.TimeLeftBlack.TotalMinutes,
+
         data.Fen,
         ConvertGameResult(data.MatchResult)
     )
@@ -138,4 +151,11 @@ public static class GameStatusDTO
             _ => new Error(ErrorType.BadRequest, $"Invalid status \"{status}\".")
         };
     }
+}
+
+public record DrawOfferDTO(string Player)
+{
+    public DrawOfferDTO(DrawOffer data)
+        : this(data.Player)
+    { }
 }

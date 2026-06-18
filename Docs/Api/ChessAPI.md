@@ -8,18 +8,19 @@ GameData:
 ```
 {
     "gameId": <GameId>,
-    "name": <string>,
 
+    "name": <string>,
     "isPublic": <Bool>,
     "status": <GameStatus>,
 
     "player1": <Username?>,
     "player2": <Username?>,
 
-    // In minutes
-    "timePerPlayer": <TimeSpan>,
-    "timeLeft1": <TimeSpan>,
-    "timeLeft2": <TimeSpan>,
+    "nextPlayer": <char> // 'w' or 'b'
+
+    "timePerPlayer": <double>,
+    "timeLeft1": <double>,
+    "timeLeft2": <double>,
 
     "fen": <string>, // Forsyth-Edwards-Notation
 
@@ -31,14 +32,14 @@ ChessBoard:
 ```
 {
     // Row by row, from top left to bottom right
-    // Lowercase => black, upppercase => white, ' ' => empty
+    // Lowercase => black, uppercase => white, ' ' => empty
     "board":
     [
-        ['r', 'n', 'b', ..., 'r'],
-        ['p', 'p', ...],
+        ['R', 'N', 'B', 'Q', 'K', ..., 'R'],
+        ['P', 'P', ...],
         [' ', ' ', ...],
         ...
-        ['R', 'N', ...]
+        ['r', 'n', ...]
     ]
 }
 ```
@@ -73,6 +74,13 @@ Move:
 }
 ```
 
+DrawOffer:
+```
+{
+    "player": <Username>
+}
+```
+
 GameStatus: `"active" | "done" | "scheduled" | "waiting"`
 
 
@@ -96,6 +104,12 @@ GameStatus: `"active" | "done" | "scheduled" | "waiting"`
 * POST `games/<GameId>/moves`
     * **Header Auth**
     * Body: `<Move>`
+* GET `games/<GameId>/draw-offer`
+    * Returns: `{ "offer": <DrawOffer?> }`
+* POST `games/<GameId>/draw-offer`
+    * **Header Auth**
+* POST `games/<GameId>/resign`
+    * **Header Auth**
 
 ---
 

@@ -113,12 +113,41 @@ public class GameController(ICommandDispatcher dispatcher) : ControllerBase
 
     [HttpPost("{gameId}/moves")]
     [AuthAsUser]
-    public async Task<IActionResult> Move(GameId gameId, [FromBody] MoveDTO moveDTO)
+    public async Task<IActionResult> DoMove(GameId gameId, [FromBody] MoveDTO moveDTO)
     {
         if (!moveDTO.ToMove().TryGetValue(out var move, out var error))
             return error.ToActionResult();
 
-        DoMoveCommand command = new(gameId, move);
+        DoMoveCommand command = new(gameId, move, HttpContext.GetUsername());
+
+        return await dispatcher.ExecuteCommandAsync(command).ToActionResult();
+    }
+
+    [HttpGet("{gameId}/draw-offer")]
+    [AuthAsUser]
+    public async Task<IActionResult> GetDrawOffer(GameId gameId)
+    {
+        GetGameCommand command = new(gameId);
+
+        return await dispatcher.ExecuteCommandAsync<GetGameCommand, ChessGame>(command)
+            .Map(game => new { offer = (game.DrawOffer != null) ? new DrawOfferDTO(game.DrawOffer) : null })
+            .ToActionResult();
+    }
+
+    [HttpPost("{gameId}/draw-offer")]
+    [AuthAsUser]
+    public async Task<IActionResult> OfferDraw(GameId gameId)
+    {
+        OfferDrawCommand command = new(gameId, HttpContext.GetUsername());
+
+        return await dispatcher.ExecuteCommandAsync(command).ToActionResult();
+    }
+
+    [HttpPost("{gameId}/resign")]
+    [AuthAsUser]
+    public async Task<IActionResult> Resign(GameId gameId)
+    {
+        ResignCommand command = new(gameId, HttpContext.GetUsername());
 
         return await dispatcher.ExecuteCommandAsync(command).ToActionResult();
     }

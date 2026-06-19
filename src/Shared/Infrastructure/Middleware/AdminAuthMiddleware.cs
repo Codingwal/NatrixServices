@@ -2,9 +2,9 @@ using NatrixServices.Shared.Application;
 
 namespace NatrixServices.Shared.Infrastructure.Middleware;
 
-public class AdminAuthMiddleware : IMiddleware
+public class AdminAuthMiddleware(IConfiguration config) : IMiddleware
 {
-    private static string AdminPassword { get; } = "admin"; // TODO 
+    private string AdminPassword => config["Config:AdminPassword"] ?? throw new Exception("Failed to load admin password!");
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {

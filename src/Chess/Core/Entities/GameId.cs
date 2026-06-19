@@ -21,7 +21,7 @@ public readonly record struct GameId
 
     public static bool TryParse(string? value, out GameId result)
     {
-        if (value is null || value.Length != 8)
+        if (value is null || value.Length != 8 || value.Any(c => !char.IsLetterOrDigit(c)))
         {
             result = default;
             return false;

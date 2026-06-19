@@ -5,7 +5,7 @@ using NatrixServices.Shared.Core;
 namespace NatrixServices.Chess.Presentation.DTOs;
 
 public record GameDataDTO(
-    GameId GameId,
+    string GameId,
 
     string Name,
     bool IsPublic,
@@ -26,7 +26,7 @@ public record GameDataDTO(
 )
 {
     public GameDataDTO(ChessGame data) : this(
-        data.GameId,
+        data.GameId.Value,
 
         data.Name,
         data.IsPublic,

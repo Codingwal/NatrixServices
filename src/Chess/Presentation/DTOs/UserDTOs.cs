@@ -18,3 +18,12 @@ public record UserDataDTO
         TournamentsWon = userData.TournamentsWon;
     }
 }
+
+public record GameInviteDTO(string GameId, string Host)
+{
+    public GameInviteDTO(GameInvite data)
+        : this(data.GameId.Value, data.Host)
+    { }
+}
+
+public record GameIdWrapper(string GameId);

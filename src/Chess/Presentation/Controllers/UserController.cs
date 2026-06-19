@@ -4,6 +4,7 @@ using NatrixServices.Chess.Core.Entities;
 using NatrixServices.Chess.Presentation.DTOs;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Core;
+using NatrixServices.Shared.Infrastructure;
 
 namespace NatrixServices.Chess.Presentation.Controllers;
 
@@ -53,6 +54,43 @@ public class UserController(ICommandDispatcher dispatcher) : ControllerBase
 
         return await dispatcher.ExecuteCommandAsync<GetUserCommand, UserData>(command)
             .Map(userData => userData.Stats)
+            .ToActionResult();
+    }
+
+    [HttpGet("{username}/invites")]
+    [AuthAsUser("username")]
+    public async Task<IActionResult> GetInvites(string username)
+    {
+        GetInvitesCommand command = new(username);
+
+        return await dispatcher.ExecuteCommandAsync<GetInvitesCommand, IEnumerable<GameInvite>>(command)
+            .Map(invites => new { invites = invites.Select(i => new GameInviteDTO(i)) })
+            .ToActionResult();
+    }
+
+    [HttpPost("{username}/invites")]
+    [AuthAsUser]
+    public async Task<IActionResult> InvitePlayer(string username, [FromBody] GameIdWrapper gameIdWrapper)
+    {
+        if (!GameId.TryParse(gameIdWrapper.GameId, out GameId gameId))
+            return BadRequest($"Invalid gameId \"{gameIdWrapper.GameId}\"");
+
+        InvitePlayerCommand command = new(gameId, HttpContext.GetUsername(), username);
+
+        return await dispatcher.ExecuteCommandAsync(command)
+            .ToActionResult();
+    }
+
+    [HttpDelete("{username}/invites")]
+    [AuthAsUser("username")]
+    public async Task<IActionResult> DeleteInvite(string username, [FromBody] GameIdWrapper gameIdWrapper)
+    {
+        if (!GameId.TryParse(gameIdWrapper.GameId, out GameId gameId))
+            return BadRequest($"Invalid gameId \"{gameIdWrapper.GameId}\"");
+
+        DeleteInviteCommand command = new(gameId, username);
+
+        return await dispatcher.ExecuteCommandAsync(command)
             .ToActionResult();
     }
 }

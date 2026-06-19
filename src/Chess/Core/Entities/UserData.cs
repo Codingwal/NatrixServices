@@ -1,14 +1,15 @@
-using NatrixServices.Shared.Core;
-
 namespace NatrixServices.Chess.Core.Entities;
+
+public record GameInvite(GameId GameId, string Host);
 
 public class UserData(string username)
 {
-    public string Username { get; set; } = username;
+    public string Username { get; } = username;
     public bool TitleHolder { get; set; } = false;
     public int SeasonsWon { get; set; } = 0;
     public int TournamentsWon { get; set; } = 0;
     public UserStats Stats { get; set; } = new();
+    public List<GameInvite> Invites { get; } = [];
 }
 
 public class UserStats

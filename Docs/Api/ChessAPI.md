@@ -123,3 +123,12 @@ GameStatus: `"active" | "done" | "scheduled" | "waiting"`
     * Returns: `{ "games": [<GameData>, <GameData>, ...] }`
 * GET `users/<Username>/stats`
     * Returns: `<UserStats>`
+* GET `users/<Username>/invites`
+    * **Header Auth**
+    * Returns: `{ "invites": [<GameInvite>, ...] }`
+* POST `users/<Username>/invites`
+    * **Header Auth (as different user)**
+    * Body: `{ "gameId": <GameId> }`
+* DELETE `users/<Username>/invites`
+    * **Header Auth**
+    * Body: `{ "gameId": <GameId> }`

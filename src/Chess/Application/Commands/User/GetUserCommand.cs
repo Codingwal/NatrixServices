@@ -11,9 +11,9 @@ public class GetUserCommandHandler(IUserStorage UserStorage) : ICommandHandler<G
 {
     public async Task<Result<UserData>> HandleAsync(GetUserCommand command)
     {
-        var game = await UserStorage.GetUserAsync(command.Username);
-        if (game == null) return new Error(ErrorType.NotFound, $"User with username \"{command.Username}\" not found.");
+        var user = await UserStorage.GetUserAsync(command.Username);
+        if (user == null) return new Error(ErrorType.NotFound, $"User with username \"{command.Username}\" not found.");
 
-        return game;
+        return user;
     }
 }

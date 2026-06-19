@@ -15,7 +15,7 @@ public class CreateUserCommandHandler(IUserStorage userStorage) : ICommandHandle
         if (command.Username.Length >= maxUsernameLength)
             return new Error(ErrorType.BadRequest, $"Username \"{command.Username}\" is too long (max length: {maxUsernameLength})");
 
-        if (command.Username.Any(c => !IsAllowedChar(c)))
+        if (!StandardChars.IsAllowed(command.Username))
             return new Error(ErrorType.BadRequest, $"Username \"{command.Username}\" contains forbidden characters.");
 
         if (await userStorage.UserExists(command.Username))
@@ -26,11 +26,5 @@ public class CreateUserCommandHandler(IUserStorage userStorage) : ICommandHandle
         await userStorage.AddUserAsync(user);
 
         return Result.Success();
-    }
-
-    private static bool IsAllowedChar(char c)
-    {
-        return char.IsLetterOrDigit(c)
-            || c == '-' || c == '_';
     }
 }

@@ -14,7 +14,7 @@ public class JoinGameCommandHandler(IGameStorage GameStorage) : ICommandHandler<
         var game = await GameStorage.GetGameAsync(command.GameId);
         if (game == null) return new Error(ErrorType.NotFound, $"Game with id {command.GameId} not found!");
 
-        var result = game.AddPlayer(command.PlayerName);
+        var result = game.JoinGame(command.PlayerName);
         if (result.IsFailure) return result.Error;
 
         await GameStorage.UpdateGameAsync(game);

@@ -5,7 +5,7 @@ using NatrixServices.Chess.Presentation.DTOs;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Core;
 
-namespace NatrixServices.Chess.API;
+namespace NatrixServices.Chess.Presentation.Controllers;
 
 public class UserNotFoundException() : Exception("User not found");
 

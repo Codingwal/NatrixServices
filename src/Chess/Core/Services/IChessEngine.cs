@@ -1,7 +1,7 @@
 using NatrixServices.Chess.Core.Entities;
 using NatrixServices.Shared.Core;
 
-namespace NatrixServices.Chess.Core.Interfaces;
+namespace NatrixServices.Chess.Core.Services;
 
 public interface IChessEngine
 {

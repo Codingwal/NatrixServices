@@ -1,6 +1,6 @@
 using NatrixServices.Chess.Application.Interfaces;
 using NatrixServices.Chess.Core.Entities;
-using NatrixServices.Chess.Core.Interfaces;
+using NatrixServices.Chess.Core.Services;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Core;
 

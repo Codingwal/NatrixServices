@@ -2,7 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using NatrixServices.Chess.Core.Engine;
-using NatrixServices.Chess.Core.Interfaces;
+using NatrixServices.Chess.Core.Services;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Infrastructure.Middleware;
 

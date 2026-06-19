@@ -11,13 +11,13 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
 {
     public GameId GameId { get; } = gameId;
 
-    public string Name { get; private set; } = name;
-    public bool IsPublic { get; private set; } = isPublic;
+    public string Name { get; } = name;
+    public bool IsPublic { get; } = isPublic;
     public GameStatus Status { get; private set; } = GameStatus.WaitingForPlayers;
-    public EventId? EventId { get; private set; } = eventId;
+    public EventId? EventId { get; } = eventId;
 
     public string Fen { get; private set; } = fen;
-    public List<Move> Moves { get; set; } = [];
+    public List<Move> Moves { get; } = [];
     public GameResult? MatchResult { get; private set; } = null;
     public Players NextPlayer { get; private set; } = Players.White;
 
@@ -26,14 +26,14 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
 
     public DrawOffer? DrawOffer { get; private set; } = null;
 
-    public TimeSpan TimePerPlayer { get; private set; } = timePerPlayer;
+    public TimeSpan TimePerPlayer { get; } = timePerPlayer;
     public TimeSpan TimeLeftWhite { get; private set; } = timePerPlayer;
     public TimeSpan TimeLeftBlack { get; private set; } = timePerPlayer;
-    public DateTime StartTime { get; private set; } = default;
+    public DateTime? StartTime { get; private set; } = null;
     public DateTime LastMoveTime { get; private set; } = default;
     private DateTime lastClockUpdateTime = default;
 
-    public Result AddPlayer(string playerName)
+    public Result JoinGame(string playerName)
     {
         if (string.IsNullOrEmpty(playerName))
             return Result.Failure(ErrorType.BadRequest, "Player name cannot be null or empty!");
@@ -41,18 +41,16 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
         if (Status != GameStatus.WaitingForPlayers)
             return Result.Failure(ErrorType.Conflict, "Game is already full!");
 
+        if (GetPlayer(playerName) != null)
+            return Result.Failure(ErrorType.BadRequest, $"Player \"{PlayerWhite}\" cannot play against themselves!");
+
         if (PlayerWhite == null)
             PlayerWhite = playerName;
         else
             PlayerBlack = playerName;
 
         if (PlayerWhite != null && PlayerBlack != null)
-        {
-            if (PlayerWhite == PlayerBlack)
-                return Result.Failure(ErrorType.BadRequest, $"Player {PlayerWhite} cannot play against themselves!");
-
             Status = GameStatus.Waiting;
-        }
 
         return Result.Success();
     }
@@ -70,12 +68,12 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
         return Result.Success();
     }
 
-    public Result DoMove(string newFen, GameResult? result, string username)
+    public Result DoMove(string newFen, GameResult? result, string playerName)
     {
         if (Status != GameStatus.Active)
             return Result.Failure(ErrorType.Conflict, "Game is not active!");
 
-        Players? player = GetPlayer(username);
+        Players? player = GetPlayer(playerName);
         if (player == null)
             return new Error(ErrorType.Forbidden, $"Player \"{player}\" is not a participant of this game.");
 
@@ -100,38 +98,38 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
         return Result.Success();
     }
 
-    public Result OfferDraw(string username)
+    public Result OfferDraw(string playerName)
     {
         if (Status != GameStatus.Active)
             return Result.Failure(ErrorType.Conflict, "Game is not active!");
 
-        if (GetPlayer(username) == null)
-            return new Error(ErrorType.Forbidden, $"Player \"{username}\" is not a participant of this game.");
+        if (GetPlayer(playerName) == null)
+            return new Error(ErrorType.Forbidden, $"Player \"{playerName}\" is not a participant of this game.");
 
         if (DrawOffer == null)
-            DrawOffer = new DrawOffer(username);
+            DrawOffer = new DrawOffer(playerName);
         else
         {
-            if (DrawOffer.Player != username)
+            if (DrawOffer.Player != playerName)
             {
                 MatchResult = GameResult.Draw;
                 Status = GameStatus.Done;
             }
             else
-                return Result.Failure(ErrorType.Conflict, $"Player \"{username}\" is already offering a draw.");
+                return Result.Failure(ErrorType.Conflict, $"Player \"{playerName}\" is already offering a draw.");
         }
 
         return Result.Success();
     }
 
-    public Result Resign(string username)
+    public Result Resign(string playerName)
     {
         if (Status != GameStatus.Active)
             return Result.Failure(ErrorType.Conflict, "Game is not active!");
 
-        Players? player = GetPlayer(username);
+        Players? player = GetPlayer(playerName);
         if (player == null)
-            return new Error(ErrorType.Forbidden, $"Player \"{username}\" is not a participant of this game.");
+            return new Error(ErrorType.Forbidden, $"Player \"{playerName}\" is not a participant of this game.");
 
         MatchResult = (player == Players.White) ? GameResult.WinBlack : GameResult.WinWhite;
         Status = GameStatus.Done;
@@ -180,11 +178,11 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
         return Result.Success();
     }
 
-    private Players? GetPlayer(string username)
+    public Players? GetPlayer(string playerName)
     {
-        if (username == PlayerWhite)
+        if (playerName == PlayerWhite)
             return Players.White;
-        else if (username == PlayerBlack)
+        else if (playerName == PlayerBlack)
             return Players.Black;
         else
             return null;

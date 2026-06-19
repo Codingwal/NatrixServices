@@ -1,6 +1,6 @@
 using NatrixServices.Chess.Core.Entities;
 
-namespace NatrixServices.Chess.API;
+namespace NatrixServices.Chess.Presentation.DTOs;
 
 public record UserDataDTO
 {

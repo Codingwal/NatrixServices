@@ -1,7 +1,7 @@
 using NatrixServices.Chess.Application.Events;
 using NatrixServices.Chess.Application.Interfaces;
 using NatrixServices.Chess.Core.Entities;
-using NatrixServices.Chess.Core.Interfaces;
+using NatrixServices.Chess.Core.Services;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Core;
 
@@ -15,6 +15,11 @@ public class DoMoveCommandHandler(IGameStorage gameStorage, IChessEngine chessEn
     {
         var game = await gameStorage.GetGameAsync(command.GameId);
         if (game == null) return new Error(ErrorType.NotFound, $"Game with id {command.GameId} not found!");
+
+        // If the game is waiting to be started and this player is the first player to move,
+        // start the game (and then do the move)
+        if (game.Status == GameStatus.Waiting && game.GetPlayer(command.Player) == Players.White)
+            game.StartGame();
 
         if (!Fen.FenToBoard(game.Fen).TryGetValue(out ChessBoard? board, out var error))
             return error;

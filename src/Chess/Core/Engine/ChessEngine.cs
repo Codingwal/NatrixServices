@@ -1,5 +1,5 @@
 using NatrixServices.Chess.Core.Entities;
-using NatrixServices.Chess.Core.Interfaces;
+using NatrixServices.Chess.Core.Services;
 using NatrixServices.Shared.Core;
 
 namespace NatrixServices.Chess.Core.Engine;

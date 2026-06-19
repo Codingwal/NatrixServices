@@ -108,6 +108,8 @@ GameStatus: `"active" | "done" | "scheduled" | "waiting"`
     * Returns: `{ "offer": <DrawOffer?> }`
 * POST `games/<GameId>/draw-offer`
     * **Header Auth**
+* DELETE `games/<GameId>/draw-offer`
+    * **Header Auth**
 * POST `games/<GameId>/resign`
     * **Header Auth**
 

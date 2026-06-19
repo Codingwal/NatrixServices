@@ -121,6 +121,21 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
 
         return Result.Success();
     }
+    public Result DeclineDraw(string playerName)
+    {
+        if (Status != GameStatus.Active)
+            return Result.Failure(ErrorType.Conflict, "Game is not active!");
+
+        if (GetPlayer(playerName) == null)
+            return new Error(ErrorType.Forbidden, $"Player \"{playerName}\" is not a participant of this game.");
+
+        if (DrawOffer == null)
+            return new Error(ErrorType.NotFound, $"There currently is no draw offer in game {GameId}.");
+
+        DrawOffer = null;
+
+        return Result.Success();
+    }
 
     public Result Resign(string playerName)
     {

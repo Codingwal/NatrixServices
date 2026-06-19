@@ -143,6 +143,15 @@ public class GameController(ICommandDispatcher dispatcher) : ControllerBase
         return await dispatcher.ExecuteCommandAsync(command).ToActionResult();
     }
 
+    [HttpDelete("{gameId}/draw-offer")]
+    [AuthAsUser]
+    public async Task<IActionResult> DeclineDraw(GameId gameId)
+    {
+        DeclineDrawCommand command = new(gameId, HttpContext.GetUsername());
+
+        return await dispatcher.ExecuteCommandAsync(command).ToActionResult();
+    }
+
     [HttpPost("{gameId}/resign")]
     [AuthAsUser]
     public async Task<IActionResult> Resign(GameId gameId)

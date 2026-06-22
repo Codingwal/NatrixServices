@@ -1,33 +1,32 @@
-using NatrixServices.Chess.API;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Core;
 using NatrixServices.Chess.Core.Entities;
 
 using EventId = NatrixServices.Chess.Core.Entities.EventId;
+using NatrixServices.Chess.Application.Interfaces;
 
 namespace NatrixServices.Chess.Application.Commands;
 
 public record CreateEventCommand(string Name, bool IsPublic, EventType EventType,
-    uint MinPlayerCount, uint MaxPlayerCount, TimeSpan TimePerPlayer)
+    uint MinPlayerCount, uint MaxPlayerCount, TimeSpan TimePerPlayer, TimeSpan TotalEventDuration)
     : ICommand<EventId>;
 
-public class CreateEventCommandHandler() : ICommandHandler<CreateEventCommand, EventId>
+public class CreateEventCommandHandler(IEventStorage eventStorage) : ICommandHandler<CreateEventCommand, EventId>
 {
     public async Task<Result<EventId>> HandleAsync(CreateEventCommand command)
     {
         if (!StandardChars.IsAllowed(command.Name))
             return new Error(ErrorType.BadRequest, $"Event name \"{command.Name}\" contains illegal characters.");
 
-        if (command.MinPlayerCount > command.MaxPlayerCount)
-            return new Error(ErrorType.BadRequest, $"MinPlayerCount ({command.MinPlayerCount}) must not be greater than MaxPlayerCount ({command.MaxPlayerCount})");
-
         EventId eventId = EventId.Generate();
 
-        ChessEvent chessEvent = new(eventId, command.Name, command.IsPublic, command.EventType,
-            command.MinPlayerCount, command.MaxPlayerCount, command.TimePerPlayer);
+        var result = ChessEvent.CreateEvent(eventId, command.Name, command.IsPublic, command.EventType,
+            command.MinPlayerCount, command.MaxPlayerCount, command.TimePerPlayer, command.TotalEventDuration);
 
-        // TODO: use storage
+        if (result.IsFailure) return result.Error;
+        ChessEvent chessEvent = result.Value;
 
+        await eventStorage.AddEventAsync(chessEvent);
 
         return eventId;
     }

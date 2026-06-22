@@ -11,6 +11,7 @@ namespace NatrixServices;
 using ChessStorage = Chess.Infrastructure.ChessStorage;
 using IChessGameStorage = Chess.Application.Interfaces.IGameStorage;
 using IChessUserStorage = Chess.Application.Interfaces.IUserStorage;
+using IChessEventStorage = Chess.Application.Interfaces.IEventStorage;
 
 using UserStorage = Users.Infrastructure.UserStorage;
 using IUserStorage = Users.Application.Interfaces.IUserStorage;
@@ -41,6 +42,7 @@ public static class Program
         builder.Services.AddDbContext<ChessStorage>(options => options.UseSqlite($"Data Source=data/chess.db"));
         builder.Services.AddScoped<IChessGameStorage>(sp => sp.GetRequiredService<ChessStorage>());
         builder.Services.AddScoped<IChessUserStorage>(sp => sp.GetRequiredService<ChessStorage>());
+        builder.Services.AddScoped<IChessEventStorage>(sp => sp.GetRequiredService<ChessStorage>());
 
         builder.Services.AddDbContext<UserStorage>(options => options.UseSqlite($"Data Source=data/users.db"));
         builder.Services.AddScoped<IUserStorage>(sp => sp.GetRequiredService<UserStorage>());
@@ -50,9 +52,11 @@ public static class Program
 
         AddCommandHandlers(builder.Services, typeof(Program).Assembly);
         AddEventHandlers(builder.Services, typeof(Program).Assembly);
+        AddBackgroundTasks(builder.Services, typeof(Program).Assembly);
 
         builder.Services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
         builder.Services.AddSingleton<IEventManager, EventManager>();
+        builder.Services.AddHostedService<BackgroundTaskUpdater>();
 
 
         // -- Setup special services -- //
@@ -70,7 +74,7 @@ public static class Program
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-        app.UseStaticFiles();
+        // app.UseStaticFiles();
         app.UseRouting();
 
 
@@ -139,6 +143,19 @@ public static class Program
             {
                 services.AddScoped(handlerInterface, type);
             }
+        }
+    }
+
+    private static void AddBackgroundTasks(IServiceCollection services, Assembly assembly)
+    {
+        var types = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .Where(t => typeof(IBackgroundTask).IsAssignableFrom(t));
+
+        foreach (var type in types)
+        {
+            services.AddTransient(type); // Register as concrete type so they can be obtained using GetRequiredService()
+            services.AddTransient(typeof(IBackgroundTask), type); // Register as interface so they are found on startup
         }
     }
 

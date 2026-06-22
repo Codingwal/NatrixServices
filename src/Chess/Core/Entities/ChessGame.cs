@@ -7,16 +7,11 @@ public enum GameStatus { WaitingForPlayers, Waiting, Active, Done }
 public enum GameResult { WinWhite, WinBlack, Draw }
 public record Move(Int2 Origin, Int2 Destination, ChessFigure? Promotion = null);
 public record DrawOffer(string Player);
-public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timePerPlayer, string fen, EventId? eventId = null)
+public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan TimePerPlayer, string Fen, EventId? EventId = null)
 {
-    public GameId GameId { get; } = gameId;
-
-    public string Name { get; } = name;
-    public bool IsPublic { get; } = isPublic;
     public GameStatus Status { get; private set; } = GameStatus.WaitingForPlayers;
-    public EventId? EventId { get; } = eventId;
 
-    public string Fen { get; private set; } = fen;
+    public string Fen { get; private set; } = Fen;
     public List<Move> Moves { get; } = [];
     public GameResult? MatchResult { get; private set; } = null;
     public Players NextPlayer { get; private set; } = Players.White;
@@ -26,9 +21,8 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
 
     public DrawOffer? DrawOffer { get; private set; } = null;
 
-    public TimeSpan TimePerPlayer { get; } = timePerPlayer;
-    public TimeSpan TimeLeftWhite { get; private set; } = timePerPlayer;
-    public TimeSpan TimeLeftBlack { get; private set; } = timePerPlayer;
+    public TimeSpan TimeLeftWhite { get; private set; } = TimePerPlayer;
+    public TimeSpan TimeLeftBlack { get; private set; } = TimePerPlayer;
     public DateTime? StartTime { get; private set; } = null;
     public DateTime LastMoveTime { get; private set; } = default;
     private DateTime lastClockUpdateTime = default;
@@ -68,6 +62,22 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
         return Result.Success();
     }
 
+    public Result Schedule(DateTime startTime)
+    {
+        if (Status != GameStatus.Waiting)
+            return new Error(ErrorType.Conflict, "Game can only be scheduled if in waiting state.");
+
+        if (StartTime != null)
+            return new Error(ErrorType.Conflict, "Game has already been started or scheduled.");
+
+        if (startTime < DateTime.UtcNow)
+            return new Error(ErrorType.BadRequest, "Requested start time has already passed. Use StartGame().");
+
+        StartTime = startTime;
+
+        return Result.Success();
+    }
+
     public Result DoMove(string newFen, GameResult? result, string playerName)
     {
         if (Status != GameStatus.Active)
@@ -89,11 +99,12 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
             Status = GameStatus.Done;
         }
 
+        // Must be before updating NextPlayer
+        if (UpdateTime().TryGetError(out var error))
+            return error;
+
         LastMoveTime = DateTime.UtcNow;
         NextPlayer = (NextPlayer == Players.White) ? Players.Black : Players.White;
-
-        UpdateTime();
-        CheckOutOfTime();
 
         return Result.Success();
     }
@@ -152,41 +163,33 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
         return Result.Success();
     }
 
-    public Result<bool> CheckOutOfTime()
-    {
-        if (Status != GameStatus.Active)
-            return Result<bool>.Failure(ErrorType.Conflict, "Game is not active!");
-
-        Result res = UpdateTime();
-        if (res.IsFailure) return Result<bool>.Failure(res.Error);
-
-        if (NextPlayer == Players.White && TimeLeftWhite <= TimeSpan.Zero)
-        {
-            TimeLeftWhite = TimeSpan.Zero;
-            MatchResult = GameResult.WinBlack;
-            Status = GameStatus.Done;
-            return Result<bool>.Success(true);
-        }
-        else if (NextPlayer == Players.Black && TimeLeftBlack <= TimeSpan.Zero)
-        {
-            TimeLeftBlack = TimeSpan.Zero;
-            MatchResult = GameResult.WinWhite;
-            Status = GameStatus.Done;
-            return Result<bool>.Success(true);
-        }
-
-        return Result<bool>.Success(false);
-    }
-
     private Result UpdateTime()
     {
         if (Status != GameStatus.Active)
             return Result.Failure(ErrorType.Conflict, "Game is not active!");
 
         if (NextPlayer == Players.White)
+        {
             TimeLeftWhite -= DateTime.UtcNow - lastClockUpdateTime;
+
+            if (TimeLeftWhite <= TimeSpan.Zero)
+            {
+                TimeLeftWhite = TimeSpan.Zero;
+                MatchResult = GameResult.WinBlack;
+                Status = GameStatus.Done;
+            }
+        }
         else
+        {
             TimeLeftBlack -= DateTime.UtcNow - lastClockUpdateTime;
+
+            if (TimeLeftBlack <= TimeSpan.Zero)
+            {
+                TimeLeftBlack = TimeSpan.Zero;
+                MatchResult = GameResult.WinWhite;
+                Status = GameStatus.Done;
+            }
+        }
 
         lastClockUpdateTime = DateTime.UtcNow;
 
@@ -201,5 +204,19 @@ public class ChessGame(GameId gameId, string name, bool isPublic, TimeSpan timeP
             return Players.Black;
         else
             return null;
+    }
+
+    public Result Update()
+    {
+        if (Status == GameStatus.Waiting)
+        {
+            if (StartTime != null && StartTime < DateTime.UtcNow)
+                StartGame();
+        }
+
+        if (Status == GameStatus.Active)
+            if (UpdateTime().TryGetError(out var error)) return error;
+
+        return Result.Success();
     }
 }

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using NatrixServices.Chess.Core;
 using NatrixServices.Chess.Core.Entities;
 using NatrixServices.Shared.Core;
 

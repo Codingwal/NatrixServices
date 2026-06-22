@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using NatrixServices.Chess.Application.Commands;
+using NatrixServices.Chess.Core;
 using NatrixServices.Chess.Core.Entities;
 using NatrixServices.Chess.Presentation.DTOs;
 using NatrixServices.Shared.Application;

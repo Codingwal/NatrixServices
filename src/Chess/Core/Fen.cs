@@ -1,6 +1,7 @@
+using NatrixServices.Chess.Core.Entities;
 using NatrixServices.Shared.Core;
 
-namespace NatrixServices.Chess.Core.Entities;
+namespace NatrixServices.Chess.Core;
 
 public static class Fen
 {

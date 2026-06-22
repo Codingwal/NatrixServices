@@ -55,6 +55,13 @@ public static class ItemStorageUtility
         await context.SaveChangesAsync();
     }
 
+    public static async Task AddEntitiesAsync<TEntity>(DbContext context, IEnumerable<TEntity> entities)
+        where TEntity : class
+    {
+        context.Set<TEntity>().AddRange(entities);
+        await context.SaveChangesAsync();
+    }
+
     public static async Task UpdateEntityAsync<TEntity, TId>(DbContext context, TEntity entity, Func<TEntity, TId> idSelector)
         where TEntity : class
         where TId : notnull
@@ -74,6 +81,35 @@ public static class ItemStorageUtility
             set.Update(entity);
         else if (trackedEntity.Entity != entity)
             trackedEntity.CurrentValues.SetValues(entity);
+
+        await context.SaveChangesAsync();
+    }
+
+    public static async Task UpdateEntitiesAsync<TEntity, TId>(DbContext context, IEnumerable<TEntity> entities, Func<TEntity, TId> idSelector)
+        where TEntity : class
+        where TId : notnull
+    {
+        if (!entities.Any()) return;
+
+        var set = context.Set<TEntity>();
+
+        foreach (var entity in entities)
+        {
+            TId id = idSelector(entity);
+            
+#if DEBUG
+            if (!await EntityExistsAsync<TEntity, TId>(context, id))
+                throw new KeyNotFoundException($"Cannot update {entity} as it has not been added to the db. Did you mean to use AddEntity?");
+#endif
+
+            var trackedEntity = context.ChangeTracker.Entries<TEntity>()
+                .FirstOrDefault(e => id.Equals(idSelector(e.Entity)));
+
+            if (trackedEntity == null)
+                set.Update(entity);
+            else if (trackedEntity.Entity != entity)
+                trackedEntity.CurrentValues.SetValues(entity);
+        }
 
         await context.SaveChangesAsync();
     }

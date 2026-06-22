@@ -97,7 +97,7 @@ public class GameController(ICommandDispatcher dispatcher) : ControllerBase
 
         return await dispatcher.ExecuteCommandAsync<CreateGameCommand, GameId>(command)
             .Match(
-                onSuccess: gameId => Created($"api/chess/games/{gameId}", new { gameId }),
+                onSuccess: gameId => Created($"api/chess/games/{gameId}", new { gameId = gameId.Value }),
                 onFailure: err => err.ToActionResult()
             );
     }
@@ -125,7 +125,7 @@ public class GameController(ICommandDispatcher dispatcher) : ControllerBase
     }
 
     [HttpGet("{gameId}/draw-offer")]
-    [AuthAsUser]
+    [NoAuth]
     public async Task<IActionResult> GetDrawOffer(GameId gameId)
     {
         GetGameCommand command = new(gameId);

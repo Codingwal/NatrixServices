@@ -18,14 +18,14 @@ public class AdminAuthMiddleware(IConfiguration config) : IMiddleware
             if (password == null)
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("Admin password is required");
+                await context.Response.WriteAsJsonAsync(new { message = "Admin password is required" });
                 return;
             }
 
             if (password != AdminPassword)  // is the password correct?
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsync("Wrong admin password");
+                await context.Response.WriteAsJsonAsync(new { message = "Wrong admin password" });
                 return;
             }
         }

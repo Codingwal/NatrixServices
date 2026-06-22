@@ -19,7 +19,7 @@ public class UserAuthMiddleware(IUserStorage userStorage) : IMiddleware
             if (username == null || passwordHash == null)
             {
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsync("Username and password hash are required");
+                await context.Response.WriteAsJsonAsync(new { message = "Username and password hash are required" });
                 return;
             }
 
@@ -27,7 +27,7 @@ public class UserAuthMiddleware(IUserStorage userStorage) : IMiddleware
             if (user == null)
             {
                 context.Response.StatusCode = StatusCodes.Status404NotFound;
-                await context.Response.WriteAsync("User not found");
+                await context.Response.WriteAsJsonAsync(new { message = "User not found" });
                 return;
             }
 
@@ -36,7 +36,7 @@ public class UserAuthMiddleware(IUserStorage userStorage) : IMiddleware
             if (!validLogin)
             {
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                await context.Response.WriteAsync("Invalid username or password");
+                await context.Response.WriteAsJsonAsync(new { message = "Invalid username or password" });
                 return;
             }
 

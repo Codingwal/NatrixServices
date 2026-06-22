@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using NatrixServices.Chess.Core;
 using NatrixServices.Chess.Core.Entities;
 using NatrixServices.Shared.Core;
@@ -77,6 +78,7 @@ public record ChessBoardDTO
     }
 }
 
+[method: JsonConstructor]
 public record MoveDTO(string From, string To, char? Promotion = null)
 {
     public MoveDTO(Move move)
@@ -133,7 +135,7 @@ public static class GameStatusDTO
         return status switch
         {
             GameStatus.WaitingForPlayers => "waiting",
-            GameStatus.Waiting => "waiting",
+            GameStatus.Waiting => "scheduled",
             GameStatus.Active => "active",
             GameStatus.Done => "done",
             _ => throw new ArgumentException()
@@ -144,7 +146,7 @@ public static class GameStatusDTO
     {
         return status switch
         {
-            "waiting" => GameStatus.Waiting,
+            "waiting" => GameStatus.WaitingForPlayers,
             "scheduled" => GameStatus.Waiting,
             "active" => GameStatus.Active,
             "done" => GameStatus.Done,

@@ -19,7 +19,7 @@ public class AuthorizationMiddleware : IMiddleware
             if (usernameAuth != usernameRoute as string)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                await context.Response.WriteAsync("You are not authorized to access this resource");
+                await context.Response.WriteAsJsonAsync(new { message = "You are not authorized to access this resource" });
                 return;
             }
         }

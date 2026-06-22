@@ -48,7 +48,7 @@ public static class Program
         builder.Services.AddScoped<IUserStorage>(sp => sp.GetRequiredService<UserStorage>());
 
 
-        // -- Setup event and command pipelines -- //
+        // -- Setup application layer -- //
 
         AddCommandHandlers(builder.Services, typeof(Program).Assembly);
         AddEventHandlers(builder.Services, typeof(Program).Assembly);
@@ -57,6 +57,13 @@ public static class Program
         builder.Services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
         builder.Services.AddSingleton<IEventManager, EventManager>();
         builder.Services.AddHostedService<BackgroundTaskUpdater>();
+
+
+        // -- Setup middleware -- //
+
+        builder.Services.AddScoped<AdminAuthMiddleware>();
+        builder.Services.AddScoped<AuthorizationMiddleware>();
+        builder.Services.AddScoped<UserAuthMiddleware>();
 
 
         // -- Setup special services -- //

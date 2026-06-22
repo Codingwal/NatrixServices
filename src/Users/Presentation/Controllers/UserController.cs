@@ -30,7 +30,7 @@ public class UserController(ICommandDispatcher dispatcher) : ControllerBase
         GetUserCommand command = new(username);
 
         return await dispatcher.ExecuteCommandAsync<GetUserCommand, UserData>(command)
-            .Map(user => new { user.Username })
+            .Map(user => new { username = user.Username })
             .ToActionResult();
     }
 }

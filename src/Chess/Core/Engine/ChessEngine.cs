@@ -48,7 +48,7 @@ public class ChessEngine : IChessEngine
         if (board.HalfMovesSinceAction >= 100)
             return GameResult.Draw;
 
-        // Handle no checkmate and stalemate
+        // Handle checkmate and stalemate
         if (!GetAllLegalMoves(board).Any())
         {
             if (InCheck(board, board.NextPlayer))

@@ -33,7 +33,6 @@ public class PawnMovementStrategy : IMovementStrategy
             }
         }
 
-
         // Capture
         foreach (var offset in new List<Int2>() { new(1, moveDir), new(-1, moveDir) })
         {
@@ -43,20 +42,20 @@ public class PawnMovementStrategy : IMovementStrategy
             ChessPiece capturedPiece = board.GetPiece(pos);
             if (capturedPiece.Figure != ChessFigure.None && !capturedPiece.IsColor(piece.Color!.Value))
                 dests.Add(pos);
+            else if (board.EnPassantTarget.HasValue && pos == board.EnPassantTarget.Value)
+                dests.Add(pos);
         }
-
-        // En passent
-        if (board.EnPassantTarget.HasValue)
-            dests.Add(board.EnPassantTarget.Value);
 
         // Return moves and handle promotion
         foreach (var dest in dests)
         {
             if (dest.y != promotionRow)
                 yield return new Move(startPos, dest);
-
-            foreach (var figure in promotionFigures)
-                yield return new Move(startPos, dest, figure);
+            else
+            {
+                foreach (var figure in promotionFigures)
+                    yield return new Move(startPos, dest, figure);
+            }
         }
     }
 }

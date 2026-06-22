@@ -92,6 +92,10 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
 
         Fen = newFen;
 
+        // Must be before updating NextPlayer and before setting result
+        if (UpdateTime().TryGetError(out var error))
+            return error;
+
         // Update result and status
         if (result != null)
         {
@@ -99,9 +103,6 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
             Status = GameStatus.Done;
         }
 
-        // Must be before updating NextPlayer
-        if (UpdateTime().TryGetError(out var error))
-            return error;
 
         LastMoveTime = DateTime.UtcNow;
         NextPlayer = (NextPlayer == Players.White) ? Players.Black : Players.White;

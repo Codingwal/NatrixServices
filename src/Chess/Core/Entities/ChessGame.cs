@@ -98,10 +98,7 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
 
         // Update result and status
         if (result != null)
-        {
-            MatchResult = result;
-            Status = GameStatus.Done;
-        }
+            SetResult(result.Value);
 
 
         LastMoveTime = DateTime.UtcNow;
@@ -123,11 +120,7 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
         else
         {
             if (DrawOffer.Player != playerName)
-            {
-                DrawOffer = null;
-                MatchResult = GameResult.Draw;
-                Status = GameStatus.Done;
-            }
+                SetResult(GameResult.Draw);
             else
                 return Result.Failure(ErrorType.Conflict, $"Player \"{playerName}\" is already offering a draw.");
         }
@@ -177,8 +170,7 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
             if (TimeLeftWhite <= TimeSpan.Zero)
             {
                 TimeLeftWhite = TimeSpan.Zero;
-                MatchResult = GameResult.WinBlack;
-                Status = GameStatus.Done;
+                SetResult(GameResult.WinBlack);
             }
         }
         else
@@ -188,8 +180,7 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
             if (TimeLeftBlack <= TimeSpan.Zero)
             {
                 TimeLeftBlack = TimeSpan.Zero;
-                MatchResult = GameResult.WinWhite;
-                Status = GameStatus.Done;
+                SetResult(GameResult.WinWhite);
             }
         }
 
@@ -220,5 +211,15 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
             if (UpdateTime().TryGetError(out var error)) return error;
 
         return Result.Success();
+    }
+
+    private void SetResult(GameResult result)
+    {
+        if (Status != GameStatus.Active || MatchResult != null)
+            throw new InvalidOperationException("Can't set game result if the game is not active or the match result is not null");
+
+        Status = GameStatus.Done;
+        MatchResult = result;
+        DrawOffer = null;
     }
 }

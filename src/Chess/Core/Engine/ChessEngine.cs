@@ -51,7 +51,14 @@ public class ChessEngine : IChessEngine
         // Handle checkmate and stalemate
         if (!GetAllLegalMoves(board).Any())
         {
-            if (InCheck(board, board.NextPlayer))
+            // Check if the next player is in check. Modify board.NextPlayer so that InCheck checks if the player
+            // that just moved can hit the king. Reset afterwards
+            var nextPlayer = board.NextPlayer;
+            board.NextPlayer = (nextPlayer == Players.White) ? Players.Black : Players.White;
+            bool inCheck = InCheck(board, nextPlayer);
+            board.NextPlayer = nextPlayer;
+
+            if (inCheck)                
                 return (board.NextPlayer == Players.White) ? GameResult.WinBlack : GameResult.WinWhite;
             else
                 return GameResult.Draw;

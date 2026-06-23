@@ -67,6 +67,30 @@ public static class ItemStorageUtility
         where TId : notnull
     {
         var set = context.Set<TEntity>();
+
+        await UpdateEntityAsyncNoSave(context, set, entity, idSelector);
+
+        await context.SaveChangesAsync();
+    }
+
+    public static async Task UpdateEntitiesAsync<TEntity, TId>(DbContext context, IEnumerable<TEntity> entities, Func<TEntity, TId> idSelector)
+        where TEntity : class
+        where TId : notnull
+    {
+        if (!entities.Any()) return;
+
+        var set = context.Set<TEntity>();
+
+        foreach (var entity in entities)
+            await UpdateEntityAsyncNoSave(context, set, entity, idSelector);
+
+        await context.SaveChangesAsync();
+    }
+
+    private static async Task UpdateEntityAsyncNoSave<TEntity, TId>(DbContext context, DbSet<TEntity> set, TEntity entity, Func<TEntity, TId> idSelector)
+        where TEntity : class
+        where TId : notnull
+    {
         TId id = idSelector(entity);
 
 #if DEBUG
@@ -90,37 +114,6 @@ public static class ItemStorageUtility
 
             trackedEntity.State = EntityState.Modified;
         }
-
-        await context.SaveChangesAsync();
-    }
-
-    public static async Task UpdateEntitiesAsync<TEntity, TId>(DbContext context, IEnumerable<TEntity> entities, Func<TEntity, TId> idSelector)
-        where TEntity : class
-        where TId : notnull
-    {
-        if (!entities.Any()) return;
-
-        var set = context.Set<TEntity>();
-
-        foreach (var entity in entities)
-        {
-            TId id = idSelector(entity);
-
-#if DEBUG
-            if (!await EntityExistsAsync<TEntity, TId>(context, id))
-                throw new KeyNotFoundException($"Cannot update {entity} as it has not been added to the db. Did you mean to use AddEntity?");
-#endif
-
-            var trackedEntity = context.ChangeTracker.Entries<TEntity>()
-                .FirstOrDefault(e => id.Equals(idSelector(e.Entity)));
-
-            if (trackedEntity == null)
-                set.Update(entity);
-            else if (trackedEntity.Entity != entity)
-                trackedEntity.CurrentValues.SetValues(entity);
-        }
-
-        await context.SaveChangesAsync();
     }
 
     public static async Task DeleteEntityAsync<TEntity, TId>(DbContext context, TId id)

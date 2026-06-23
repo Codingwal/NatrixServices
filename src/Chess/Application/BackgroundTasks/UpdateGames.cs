@@ -7,7 +7,7 @@ namespace NatrixServices.Chess.Application.BackgroundTasks;
 
 public class UpdateGamesTask(IGameStorage gameStorage, IEventManager eventManager) : IBackgroundTask
 {
-    public TimeSpan UpdateInterval => TimeSpan.FromSeconds(3);
+    public TimeSpan UpdateInterval => TimeSpan.FromSeconds(1);
 
     public async Task ExecuteAsync()
     {

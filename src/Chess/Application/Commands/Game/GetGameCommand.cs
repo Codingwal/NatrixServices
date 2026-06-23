@@ -7,11 +7,11 @@ namespace NatrixServices.Chess.Application.Commands;
 
 public record GetGameCommand(GameId GameId) : ICommand<ChessGame>;
 
-public class GetGameCommandHandler(IGameStorage GameStorage) : ICommandHandler<GetGameCommand, ChessGame>
+public class GetGameCommandHandler(IGameStorage gameStorage) : ICommandHandler<GetGameCommand, ChessGame>
 {
     public async Task<Result<ChessGame>> HandleAsync(GetGameCommand command)
     {
-        var game = await GameStorage.GetGameAsync(command.GameId);
+        var game = await gameStorage.GetGameAsync(command.GameId);
         if (game == null) return new Error(ErrorType.NotFound, $"Game with id {command.GameId} not found!");
 
         return game;

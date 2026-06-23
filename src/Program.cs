@@ -54,7 +54,7 @@ public static class Program
         AddEventHandlers(builder.Services, typeof(Program).Assembly);
         AddBackgroundTasks(builder.Services, typeof(Program).Assembly);
 
-        builder.Services.AddSingleton<ICommandDispatcher, CommandDispatcher>();
+        builder.Services.AddScoped<ICommandDispatcher, CommandDispatcher>();
         builder.Services.AddSingleton<IEventManager, EventManager>();
         builder.Services.AddHostedService<BackgroundTaskUpdater>();
 

@@ -124,6 +124,7 @@ public record ChessGame(GameId GameId, string Name, bool IsPublic, TimeSpan Time
         {
             if (DrawOffer.Player != playerName)
             {
+                DrawOffer = null;
                 MatchResult = GameResult.Draw;
                 Status = GameStatus.Done;
             }

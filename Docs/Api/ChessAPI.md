@@ -83,6 +83,14 @@ DrawOffer:
 
 GameStatus: `"active" | "done" | "scheduled" | "waiting"`
 
+GameInvite:
+```
+{
+    "gameId": <GameId>,
+    "host": <Username>
+}
+```
+
 
 ## Game API
 
@@ -129,6 +137,5 @@ GameStatus: `"active" | "done" | "scheduled" | "waiting"`
 * POST `users/<Username>/invites`
     * **Header Auth (as different user)**
     * Body: `{ "gameId": <GameId> }`
-* DELETE `users/<Username>/invites`
+* DELETE `users/<Username>/invites/<GameId>`
     * **Header Auth**
-    * Body: `{ "gameId": <GameId> }`

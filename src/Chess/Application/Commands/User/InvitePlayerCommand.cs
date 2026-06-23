@@ -18,6 +18,9 @@ public class InvitePlayerCommandHandler(IUserStorage userStorage, IEventManager 
         var user = await userStorage.GetUserAsync(command.Player);
         if (user == null) return new Error(ErrorType.NotFound, $"User with username \"{command.Player}\" not found.");
 
+        if (user.Invites.Any(invite => invite.GameId == command.GameId))
+            return new Error(ErrorType.Conflict, $"User \"{command.Player}\" has already been invited to game {command.GameId}");
+
         user.Invites.Add(new GameInvite(command.GameId, command.Host));
 
         await userStorage.UpdateUserAsync(user);

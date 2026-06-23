@@ -78,9 +78,18 @@ public static class ItemStorageUtility
             .FirstOrDefault(e => id.Equals(idSelector(e.Entity)));
 
         if (trackedEntity == null)
+        {
             set.Update(entity);
-        else if (trackedEntity.Entity != entity)
-            trackedEntity.CurrentValues.SetValues(entity);
+            var entry = set.Entry(entity);
+            entry.State = EntityState.Modified;
+        }
+        else
+        {
+            if (trackedEntity.Entity != entity)
+                trackedEntity.CurrentValues.SetValues(entity);
+
+            trackedEntity.State = EntityState.Modified;
+        }
 
         await context.SaveChangesAsync();
     }
@@ -96,7 +105,7 @@ public static class ItemStorageUtility
         foreach (var entity in entities)
         {
             TId id = idSelector(entity);
-            
+
 #if DEBUG
             if (!await EntityExistsAsync<TEntity, TId>(context, id))
                 throw new KeyNotFoundException($"Cannot update {entity} as it has not been added to the db. Did you mean to use AddEntity?");

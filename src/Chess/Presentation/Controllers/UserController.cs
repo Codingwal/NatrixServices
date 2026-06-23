@@ -81,12 +81,12 @@ public class UserController(ICommandDispatcher dispatcher) : ControllerBase
             .ToActionResult();
     }
 
-    [HttpDelete("{username}/invites")]
+    [HttpDelete("{username}/invites/{gameIdStr}")]
     [AuthAsUser("username")]
-    public async Task<IActionResult> DeleteInvite(string username, [FromBody] GameIdWrapper gameIdWrapper)
+    public async Task<IActionResult> DeleteInvite(string username, string gameIdStr)
     {
-        if (!GameId.TryParse(gameIdWrapper.GameId, out GameId gameId))
-            return BadRequest($"Invalid gameId \"{gameIdWrapper.GameId}\"");
+        if (!GameId.TryParse(gameIdStr, out GameId gameId))
+            return BadRequest($"Invalid gameId \"{gameIdStr}\"");
 
         DeleteInviteCommand command = new(gameId, username);
 

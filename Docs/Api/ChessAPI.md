@@ -62,6 +62,7 @@ UserData:
     "titleDescription": <string>,
     "seasonsWon": <int>,
     "tournamentsWon": <int>
+    "xp": <int>,
 }
 ```
 

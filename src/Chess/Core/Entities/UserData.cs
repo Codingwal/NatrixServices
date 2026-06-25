@@ -8,10 +8,12 @@ public class UserData(string username)
     public bool TitleHolder { get; set; } = false;
     public int SeasonsWon { get; set; } = 0;
     public int TournamentsWon { get; set; } = 0;
+    public int XP { get; set; } = 0;
     public UserStats Stats { get; set; } = new();
     public List<GameInvite> Invites { get; } = [];
 }
 
+// NOTE: Properties must have public setters for json serialization
 public class UserStats
 {
     public int GamesPlayed { get; set; } = 0;
@@ -95,7 +97,7 @@ public class UserStats
             if (player == Players.White) GamesWon++;
             else GamesLost++;
         }
-        else if (gameData.MatchResult == GameResult.WinWhite)
+        else if (gameData.MatchResult == GameResult.WinBlack)
         {
             if (player == Players.Black) GamesWon++;
             else GamesLost++;

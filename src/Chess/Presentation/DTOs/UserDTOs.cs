@@ -9,6 +9,7 @@ public record UserDataDTO
     public string TitleDescription { get; set; }
     public int SeasonsWon { get; set; }
     public int TournamentsWon { get; set; }
+    public int XP { get; set; }
     public UserDataDTO(UserData userData)
     {
         Username = userData.Username;
@@ -16,6 +17,7 @@ public record UserDataDTO
         TitleDescription = userData.TitleHolder ? "The reigning champion" : userData.Stats.GetTitle().Item2;
         SeasonsWon = userData.SeasonsWon;
         TournamentsWon = userData.TournamentsWon;
+        XP = userData.XP;
     }
 }
 

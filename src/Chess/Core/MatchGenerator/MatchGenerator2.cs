@@ -3,6 +3,7 @@ using NatrixServices.Chess.Core.Services;
 
 namespace NatrixServices.Chess.Core.MatchGenerator;
 
+/*
 public class MatchGenerator2 : IMatchGenerator
 {
     private const string Placeholder = "$NONE$";
@@ -55,3 +56,4 @@ public class MatchGenerator2 : IMatchGenerator
 
     public record Matchup(string Player1, string Player2);
 }
+*/

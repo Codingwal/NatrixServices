@@ -10,6 +10,7 @@ public record UserDataDTO
     public int SeasonsWon { get; set; }
     public int TournamentsWon { get; set; }
     public int XP { get; set; }
+    public string Skin { get; set; }
     public UserDataDTO(UserData userData)
     {
         Username = userData.Username;
@@ -18,6 +19,7 @@ public record UserDataDTO
         SeasonsWon = userData.SeasonsWon;
         TournamentsWon = userData.TournamentsWon;
         XP = userData.XP;
+        Skin = userData.Skin;
     }
 }
 

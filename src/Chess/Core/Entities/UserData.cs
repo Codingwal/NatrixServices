@@ -9,6 +9,7 @@ public class UserData(string username)
     public int SeasonsWon { get; set; } = 0;
     public int TournamentsWon { get; set; } = 0;
     public int XP { get; set; } = 0;
+    public string Skin { get; set; } = "default";
     public UserStats Stats { get; set; } = new();
     public List<GameInvite> Invites { get; } = [];
 }

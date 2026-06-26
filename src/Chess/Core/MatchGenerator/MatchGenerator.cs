@@ -29,6 +29,7 @@ public class MatchGenerator : IMatchGenerator
         //     }
     }
 
+    /*
     private static List<Matchup> GetMatchups(List<string> players)
     {
         var combinations = GetCombinations(players);
@@ -82,4 +83,5 @@ public class MatchGenerator : IMatchGenerator
     }
 
     private record Matchup(string Player1, string Player2);
+    */
 }

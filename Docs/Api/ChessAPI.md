@@ -63,6 +63,7 @@ UserData:
     "seasonsWon": <int>,
     "tournamentsWon": <int>
     "xp": <int>,
+    "skin": <string>
 }
 ```
 

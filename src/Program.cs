@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using NatrixServices.Chess.Core.Engine;
+using NatrixServices.Chess.Core.MatchGenerator;
 using NatrixServices.Chess.Core.Services;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Infrastructure.Middleware;
@@ -69,6 +70,7 @@ public static class Program
         // -- Setup special services -- //
 
         builder.Services.AddSingleton<IChessEngine, ChessEngine>();
+        builder.Services.AddSingleton<IMatchGenerator, MatchGenerator>();
 
 
         // -- Configure app -- //

@@ -1,25 +1,15 @@
-using System.Reflection;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
 using NatrixServices.Betting;
-using NatrixServices.Betting.Core.ProfitCalculator;
-using NatrixServices.Betting.Core.Services;
 using NatrixServices.Betting.Infrastructure;
-using NatrixServices.Chess.Core.Engine;
-using NatrixServices.Chess.Core.MatchGenerator;
-using NatrixServices.Chess.Core.Services;
+using NatrixServices.Chess;
+using NatrixServices.Chess.Infrastructure;
+using NatrixServices.Shared;
 using NatrixServices.Shared.Application;
 using NatrixServices.Shared.Infrastructure.Middleware;
+using NatrixServices.Users;
+using NatrixServices.Users.Infrastructure;
 
 namespace NatrixServices;
-
-using ChessStorage = Chess.Infrastructure.ChessStorage;
-using IChessGameStorage = Chess.Application.Interfaces.IGameStorage;
-using IChessUserStorage = Chess.Application.Interfaces.IUserStorage;
-using IChessEventStorage = Chess.Application.Interfaces.IEventStorage;
-
-using UserStorage = Users.Infrastructure.UserStorage;
-using IUserStorage = Users.Application.Interfaces.IUserStorage;
 
 public static class Program
 {
@@ -42,28 +32,13 @@ public static class Program
         builder.Services.AddControllers();
 
 
-        // -- Setup database services -- //
+        // -- Setup application -- //
 
-        builder.Services.AddDbContext<ChessStorage>(options => options.UseSqlite($"Data Source=data/chess.db"));
-        builder.Services.AddScoped<IChessGameStorage>(sp => sp.GetRequiredService<ChessStorage>());
-        builder.Services.AddScoped<IChessUserStorage>(sp => sp.GetRequiredService<ChessStorage>());
-        builder.Services.AddScoped<IChessEventStorage>(sp => sp.GetRequiredService<ChessStorage>());
-
-        builder.Services.AddDbContext<UserStorage>(options => options.UseSqlite($"Data Source=data/users.db"));
-        builder.Services.AddScoped<IUserStorage>(sp => sp.GetRequiredService<UserStorage>());
-
+        builder.Services.AddUserServices();
+        builder.Services.AddChessServices();
         builder.Services.AddBettingServices();
 
-
-        // -- Setup application layer -- //
-
-        AddCommandHandlers(builder.Services, typeof(Program).Assembly);
-        AddEventHandlers(builder.Services, typeof(Program).Assembly);
-        AddBackgroundTasks(builder.Services, typeof(Program).Assembly);
-
-        builder.Services.AddScoped<ICommandDispatcher, CommandDispatcher>();
-        builder.Services.AddSingleton<IEventManager, EventManager>();
-        builder.Services.AddHostedService<BackgroundTaskUpdater>();
+        builder.Services.AddApplicationLayerServices(typeof(Program).Assembly);
 
 
         // -- Setup middleware -- //
@@ -71,13 +46,6 @@ public static class Program
         builder.Services.AddScoped<AdminAuthMiddleware>();
         builder.Services.AddScoped<AuthorizationMiddleware>();
         builder.Services.AddScoped<UserAuthMiddleware>();
-
-
-        // -- Setup special services -- //
-
-        builder.Services.AddSingleton<IChessEngine, ChessEngine>();
-        builder.Services.AddSingleton<IMatchGenerator, MatchGenerator>();
-        builder.Services.AddSingleton<IProfitCalculator, ProfitCalculator>();
 
 
         // -- Configure app -- //
@@ -122,58 +90,6 @@ public static class Program
         VerifyAllEndpointsHaveAuthAttribute(app);
 
         await appTask;
-    }
-
-    private static void AddCommandHandlers(IServiceCollection services, Assembly assembly)
-    {
-        var types = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract);
-
-        foreach (var type in types)
-        {
-            var handlerInterfaces = type.GetInterfaces()
-                .Where(i => i.IsGenericType
-                    && (i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)
-                    || i.GetGenericTypeDefinition() == typeof(ICommandHandler<,>))
-                );
-
-            foreach (var handlerInterface in handlerInterfaces)
-            {
-                services.AddScoped(handlerInterface, type);
-            }
-        }
-    }
-
-    private static void AddEventHandlers(IServiceCollection services, Assembly assembly)
-    {
-        var types = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract);
-
-        foreach (var type in types)
-        {
-            var handlerInterfaces = type.GetInterfaces()
-                .Where(i => i.IsGenericType
-                    && i.GetGenericTypeDefinition() == typeof(IEventHandler<>)
-                );
-
-            foreach (var handlerInterface in handlerInterfaces)
-            {
-                services.AddScoped(handlerInterface, type);
-            }
-        }
-    }
-
-    private static void AddBackgroundTasks(IServiceCollection services, Assembly assembly)
-    {
-        var types = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract)
-            .Where(t => typeof(IBackgroundTask).IsAssignableFrom(t));
-
-        foreach (var type in types)
-        {
-            services.AddTransient(type); // Register as concrete type so they can be obtained using GetRequiredService()
-            services.AddTransient(typeof(IBackgroundTask), type); // Register as interface so they are found on startup
-        }
     }
 
     private static void VerifyAllEndpointsHaveAuthAttribute(WebApplication app)

@@ -1,59 +1,28 @@
-using System.Text.Json;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using NatrixServices.Shared.Core;
 
 namespace NatrixServices.Chess.Core.Entities;
 
-[JsonConverter(typeof(GameIdJsonConverter))]
-public readonly record struct GameId
+[JsonConverter(typeof(BaseIdJsonConverter<GameId>))]
+public record GameId : BaseId, IId<GameId>
 {
-    public string Value { get; }
-    public GameId(string value)
-    {
-        if (value.Length != 8)
-            throw new ArgumentException("GameId must be 8 characters long.");
-        if (value.Any(c => !char.IsLetterOrDigit(c)))
-            throw new ArgumentException($"Illegal character in EventId");
+    private const int length = 8;
+    protected override int Length => length;
 
-        Value = value;
-    }
+    public GameId(string value) : base(value) { }
 
-    public static GameId Generate()
-    {
-        string id = Guid.NewGuid().ToString()[0..8];
-        return new GameId(id);
-    }
+    public static GameId Generate() => new GameId(GenerateId(length));
 
-    public static bool TryParse(string? value, out GameId result)
+    public static bool TryParse(string? value, [NotNullWhen(true)] out GameId? result)
     {
-        if (value is null || value.Length != 8 || value.Any(c => !char.IsLetterOrDigit(c)))
+        if (!IsValidId(value, length))
         {
             result = default;
             return false;
         }
 
-        result = new GameId(value);
+        result = new GameId(value!);
         return true;
-    }
-
-    public override string ToString()
-    {
-        return Value;
-    }
-}
-
-public class GameIdJsonConverter : JsonConverter<GameId>
-{
-    public override GameId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
-        string? value = reader.GetString();
-        if (GameId.TryParse(value, out GameId gameId))
-            return gameId;
-        else
-            throw new JsonException($"Invalid GameId \"{value}\"");
-    }
-
-    public override void Write(Utf8JsonWriter writer, GameId value, JsonSerializerOptions options)
-    {
-        writer.WriteStringValue(value.Value);
     }
 }

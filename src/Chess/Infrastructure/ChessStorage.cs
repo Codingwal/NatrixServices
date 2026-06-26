@@ -93,7 +93,7 @@ public class ChessStorage(DbContextOptions<ChessStorage> options) : DbContext(op
 
             builder.Property(g => g.Status).HasConversion<string>();
             builder.Property(g => g.EventId).HasConversion(
-                id => id != null ? id.Value.Value : null,
+                id => id != null ? id.Value : null,
                 str => str != null ? new Core.Entities.EventId(str) : null
             );
 

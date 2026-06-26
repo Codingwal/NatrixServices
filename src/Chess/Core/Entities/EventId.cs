@@ -1,33 +1,28 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
+using NatrixServices.Shared.Core;
+
 namespace NatrixServices.Chess.Core.Entities;
 
-public readonly record struct EventId
+[JsonConverter(typeof(BaseIdJsonConverter<EventId>))]
+public record EventId : BaseId, IId<EventId>
 {
-    public string Value { get; }
-    public EventId(string value)
-    {
-        if (value.Length != 8)
-            throw new ArgumentException("EventId must be 8 characters long.");
-        if (value.Any(c => !char.IsLetterOrDigit(c)))
-            throw new ArgumentException($"Illegal character in EventId");
+    private const int length = 8;
+    protected override int Length => length;
 
-        Value = value;
-    }
+    public EventId(string value) : base(value) { }
 
-    public static EventId Generate()
-    {
-        string id = Guid.NewGuid().ToString()[0..8];
-        return new EventId(id);
-    }
+    public static EventId Generate() => new EventId(GenerateId(length));
 
-    public static bool TryParse(string? value, out EventId result)
+    public static bool TryParse(string? value, [NotNullWhen(true)] out EventId? result)
     {
-        if (value is null || value.Length != 8)
+        if (!IsValidId(value, length))
         {
             result = default;
             return false;
         }
 
-        result = new EventId(value);
+        result = new EventId(value!);
         return true;
     }
 }

@@ -72,7 +72,7 @@ public class UserController(ICommandDispatcher dispatcher) : ControllerBase
     [AuthAsUser]
     public async Task<IActionResult> InvitePlayer(string username, [FromBody] GameIdWrapper gameIdWrapper)
     {
-        if (!GameId.TryParse(gameIdWrapper.GameId, out GameId gameId))
+        if (!GameId.TryParse(gameIdWrapper.GameId, out var gameId))
             return BadRequest($"Invalid gameId \"{gameIdWrapper.GameId}\"");
 
         InvitePlayerCommand command = new(gameId, HttpContext.GetUsername(), username);
@@ -85,7 +85,7 @@ public class UserController(ICommandDispatcher dispatcher) : ControllerBase
     [AuthAsUser("username")]
     public async Task<IActionResult> DeleteInvite(string username, string gameIdStr)
     {
-        if (!GameId.TryParse(gameIdStr, out GameId gameId))
+        if (!GameId.TryParse(gameIdStr, out var gameId))
             return BadRequest($"Invalid gameId \"{gameIdStr}\"");
 
         DeleteInviteCommand command = new(gameId, username);

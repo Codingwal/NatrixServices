@@ -11,7 +11,7 @@ public class UpdateChessEvent(IGameStorage gameStorage) : IEventHandler<GameFini
     {
         ChessGame? game = await gameStorage.GetGameAsync(e.GameId) ?? throw new KeyNotFoundException();
 
-        if (!game.EventId.HasValue)
+        if (game.EventId == null)
             return;
 
         // ...

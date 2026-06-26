@@ -30,7 +30,17 @@ public class UserController(ICommandDispatcher dispatcher) : ControllerBase
         GetUserCommand command = new(username);
 
         return await dispatcher.ExecuteCommandAsync<GetUserCommand, UserData>(command)
-            .Map(user => new { username = user.Username })
+            .Map(user => new UserDataDTO(user))
+            .ToActionResult();
+    }
+
+    [HttpPost("{username}/linked-account")]
+    [AuthAsAdmin]
+    public async Task<IActionResult> LinkAccount(string username, [FromBody] LinkAccountRequest request)
+    {
+        LinkAccountCommand command = new(username, request.Account);
+
+        return await dispatcher.ExecuteCommandAsync(command)
             .ToActionResult();
     }
 }

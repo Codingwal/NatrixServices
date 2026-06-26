@@ -1,11 +1,22 @@
-# Chess api
+# User api
 ``` api/users/... ```
 
-**HeaderAuth**: <br>
+**Header Auth**: <br>
 Header: `{ "username": <string>, "passwordHash": <string> }`
 
-**AdminOnly**: <br>
+**Admin Only**: <br>
 Header: `{ "adminPassword": <string> }`
+
+
+## Structures
+
+UserData:
+```
+{
+    "username": <string>,
+    "linkedAccount": <string?>
+}
+```
 
 
 ## Api
@@ -15,3 +26,8 @@ Header: `{ "adminPassword": <string> }`
 
 * GET `{username}`
     * **Header Auth**
+    * Returns: `<UserData>`
+
+* POST `{username}/linked-account`
+    * **Admin Only**
+    * Body: `{ "account": <string> }`

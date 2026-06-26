@@ -1,6 +1,10 @@
 using System.Reflection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using NatrixServices.Betting;
+using NatrixServices.Betting.Core.ProfitCalculator;
+using NatrixServices.Betting.Core.Services;
+using NatrixServices.Betting.Infrastructure;
 using NatrixServices.Chess.Core.Engine;
 using NatrixServices.Chess.Core.MatchGenerator;
 using NatrixServices.Chess.Core.Services;
@@ -48,6 +52,8 @@ public static class Program
         builder.Services.AddDbContext<UserStorage>(options => options.UseSqlite($"Data Source=data/users.db"));
         builder.Services.AddScoped<IUserStorage>(sp => sp.GetRequiredService<UserStorage>());
 
+        builder.Services.AddBettingServices();
+
 
         // -- Setup application layer -- //
 
@@ -71,6 +77,7 @@ public static class Program
 
         builder.Services.AddSingleton<IChessEngine, ChessEngine>();
         builder.Services.AddSingleton<IMatchGenerator, MatchGenerator>();
+        builder.Services.AddSingleton<IProfitCalculator, ProfitCalculator>();
 
 
         // -- Configure app -- //
@@ -102,6 +109,7 @@ public static class Program
         {
             await scope.ServiceProvider.GetRequiredService<ChessStorage>().InitAsync();
             await scope.ServiceProvider.GetRequiredService<UserStorage>().InitAsync();
+            await scope.ServiceProvider.GetRequiredService<BettingStorage>().InitAsync();
         }
 
         app.MapControllers();

@@ -128,6 +128,11 @@ public sealed record Result<TValue> : Result
         => IsSuccess ? onSuccess(Value) : Error;
     public Result<T> Map<T>(Func<TValue, Result<T>> onSuccess)
         => IsSuccess ? onSuccess(Value) : Error;
+
+    public async Task<Result> Then(Func<TValue, Task<Result>> onSuccess)
+    => IsSuccess ? await onSuccess(Value) : Error;
+    public async Task<Result<T>> Map<T>(Func<TValue, Task<Result<T>>> onSuccess)
+        => IsSuccess ? await onSuccess(Value) : Error;
 }
 
 public static class ResultExtensions
